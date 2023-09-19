@@ -79,7 +79,6 @@ cd "${BUILDDIR}"
 
 # Download the source tarball from GitHub
 sudo apt update
-sudo apt install curl jq -y
 git_tarball_url="$(curl --retry 5 "https://api.github.com/repos/git/git/tags" | jq -r '.[0].tarball_url')"
 curl -L --retry 5 "${git_tarball_url}" --output "git-source.tar.gz"
 tar -xf "git-source.tar.gz" --strip 1
