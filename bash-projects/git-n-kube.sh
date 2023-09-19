@@ -46,6 +46,7 @@ EOF
 echo "Configurations added successfully!"
 
 ### Git and user Configuration ###
+sudo apt update && sudo apt upgrade -y
 # This script will build git from source, using openssl instead of gnutls so you can use it with HTTPS
 set -eu
 # Gather command line options
