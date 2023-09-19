@@ -446,5 +446,16 @@ cpp()
 }
 EOF
 source ~/.bashrc
+
+### Configure fstab ###
+# Create the mount points
+sudo mkdir /mnt/Movies
+sudo mkdir /mnt/TV
+sudo mkdir /mnt/Disney\ Movies
+# Add the mount points to fstab
+echo "192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
+echo "192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0" | sudo tee -a /etc/fstab
+echo "192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
+
 echo "All tasks completed successfully. Starting Kubernetes and Git installation..."
 wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/git-n-kube.sh && chmod +x git-n-kube.sh && ./git-n-kube.sh
