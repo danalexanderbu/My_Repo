@@ -122,9 +122,23 @@ if [[ "${SKIPINSTALL}" != "YES" ]]; then
   echo "Make sure to refresh your shell!"
   bash -c 'echo "$(which git) ($(git --version))"'
 fi
+mkdir ~/.mycerts
+chmod 700 ~/.mycerts
+cd ~/.mycerts
+wget https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_DoD.zip -O unclass-certificates_pkcs7_DoD.zip
+unzip unclass-certificates_pkcs7_DoD.zip
+openssl pkcs7 -print_certs -in certificates_pkcs7_v5_12_dod_pem.p7b -out dod_cert_bundle.pem
+chmod 600 ~/.mycerts/dod_cert_bundle.pem
 git config --global user.name "Daniel Burke"
 git config --global user.email "daniel.burke.13@us.af.mil"
 git config --global core.editor "vscode"
+git config --global --unset http.sslBackend
+git config --global --unset http.sslcert
+git config --global --unset http.sslcrlfile
+git config --global http.sslBackend openssl
+git config --global http.sslcapath ~/.mycerts/dod_cert_bundle.pem
+git config --global http.sslverify false
+git config --global http.sslverify true
 # Define the path to the Documents directory
 DOCUMENTS_DIR="$HOME/Documents"
 # Go to the Documents directory
