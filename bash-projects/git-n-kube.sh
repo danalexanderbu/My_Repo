@@ -136,7 +136,7 @@ git config --global --unset http.sslBackend
 git config --global --unset http.sslcert
 git config --global --unset http.sslcrlfile
 git config --global http.sslBackend openssl
-git config --global http.sslcapath ~/.mycerts/dod_cert_bundle.pem
+git config --global http.sslCAInfo ~/.mycerts/dod_cert_bundle.pem
 git config --global http.sslverify false
 git config --global http.sslverify true
 # Define the path to the Documents directory
