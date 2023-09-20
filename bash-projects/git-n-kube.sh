@@ -123,14 +123,15 @@ if [[ "${SKIPINSTALL}" != "YES" ]]; then
   bash -c 'echo "$(which git) ($(git --version))"'
 fi
 mkdir ~/.mycerts
-chmod 700 ~/.mycerts
 cd ~/.mycerts
 wget https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_DoD.zip -O unclass-certificates_pkcs7_DoD.zip
 unzip unclass-certificates_pkcs7_DoD.zip
-cd ~/.mycerts/unclass-certificates_pkcs7_DoD
+cd ~/.mycerts/certificates_pkcs7_DoD_v5_12_dod
 openssl pkcs7 -print_certs -in certificates_pkcs7_v5_12_dod_pem.p7b -out dod_cert_bundle.pem
-chmod 600 ~/.mycerts/dod_cert_bundle.pem
+chmod 600 ~/.mycerts/certificates_pkcs7_DoD_v5_12_dod/dod_cert_bundle.pem
 cd $HOME
+chmod 700 ~/.mycerts
+# Configure git
 git config --global user.name "Daniel Burke"
 git config --global user.email "daniel.burke.13@us.af.mil"
 git config --global core.editor "vscode"
