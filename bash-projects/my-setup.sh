@@ -1,8 +1,10 @@
 #!/bin/bash
 
 ### Update the system and install required tools ###
-sudo apt update && sudo apt upgrade -y
 sudo add-apt-repository ppa:bashtop-monitor/bashtop
+sudo add-apt-repository ppa:obsproject/obs-studio
+sudo apt update && sudo apt upgrade -y
+
 installs=(
   steam
   vim
@@ -33,6 +35,8 @@ installs=(
   openssl
   ufw
   kate
+  ffmpeg
+  obs-studio
 )
 for package in "${installs[@]}"; do
     if ! dpkg-query -Wf'${db:Status-abbrev}' "$package" 2>/dev/null | grep -q '^i'; then
