@@ -3,9 +3,19 @@
 ### Update the system and install required tools ###
 sudo add-apt-repository ppa:bashtop-monitor/bashtop
 sudo add-apt-repository ppa:obsproject/obs-studio
+#deb http://deb.debian.org/debian/ bookworm main contrib non-free
+#dpkg --add-architecture i386
 sudo apt update && sudo apt upgrade -y
 installs=(
   steam
+  #steam-installer
+  #mesa-vulkan-drivers
+  #libglx-mesa0:i386
+  #mesa-vulkan-drivers:i386
+  #libgl1-mesa-dri:i386
+  #libgtk2.0-0:i386
+  #dnsmasq
+  #resolvconf
   vim
   jq
   xclip
@@ -45,6 +55,29 @@ done
 
 ### Start steam and login ###
 steam &
+# service dnsmasq restart
+# service resolvconf restart
+#Steam-installer will install Steam to ~/.steam/debian-installation to run Steam, you will need to run the shell script located in this directory.
+#~/.steam/debian-installation/steam.sh
+#fix errors from steam runtime
+#find ~/.steam/root/ \( -name "libgcc_s.so*" -o -name "libstdc++.so*" -o -name "libxcb.so*" \) -print -delete
+#By default, it will also use newer versions of certain libraries from the host system if available. You can disable this functionality, and force utilization of the older Steam runtime, by running Steam with:
+#STEAM_RUNTIME_PREFER_HOST_LIBRARIES=0 steam
+#Run these commands to remove runtime libraries known to cause issues with Debian:
+# rm ~/.steam/debian-installation/ubuntu12_32/steam-runtime/i386/usr/lib/i386-linux-gnu/libstdc++.so.6
+# rm ~/.steam/debian-installation/ubuntu12_32/steam-runtime/i386/lib/i386-linux-gnu/libgcc_s.so.1
+# rm ~/.steam/debian-installation/ubuntu12_32/steam-runtime/amd64/lib/x86_64-linux-gnu/libgcc_s.so.1
+# rm ~/.steam/debian-installation/ubuntu12_32/steam-runtime/amd64/usr/lib/x86_64-linux-gnu/libstdc++.so.6
+# rm ~/.steam/debian-installation/ubuntu12_32/steam-runtime/i386/usr/lib/i386-linux-gnu/libxcb.so.1
+# rm ~/.steam/debian-installation/ubuntu12_32/steam-runtime/i386/lib/i386-linux-gnu/libgpg-error.so.0m
+#It's also necessary to link two libraries because the libudev.so.0 file is currently not available in Debian:
+#ln -s /lib/i386-linux-gnu/libudev.so.1 /lib/i386-linux-gnu/libudev.so.0
+#LD_LIBRARY_PATH=~/.steam/bin32 ldd ~/.steam/bin32/steamclient.so | grep 'not found'
+#no sound in games
+# rm -rf ~/.steam/debian-installation/ubuntu12_32/steam-runtime/i386/usr/lib/i386-linux-gnu/alsa-lib
+# rm -rf ~/.steam/debian-installation/ubuntu12_32/steam-runtime/amd64/usr/lib/x86_64-linux-gnu/alsa-lib
+# rm ~/.steam/debian-installation/ubuntu12_32/steam-runtime/i386/usr/lib/i386-linux-gnu/libasound.so.*
+# rm ~/.steam/debian-installation/ubuntu12_32/steam-runtime/amd64/usr/lib/x86_64-linux-gnu/libasound.so.*
 cd $HOME
 
 ### Download and Install DEB Packages ###
