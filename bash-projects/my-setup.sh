@@ -21,6 +21,8 @@ installs=(
   #resolvconf
   #nvidia-driver
   #firmware-misc-nonfree
+  #adds add-apt-repository
+  #software-properties-common
   vim
   jq
   xclip
@@ -157,6 +159,8 @@ fi
 
 ### Microsoft Fonts and Language Support ###
 sudo add-apt-repository multiverse -y
+#deb support needs to be done before ttf
+#sudo apt-add-repository contrib non-free -y
 sudo apt update
 sudo apt upgrade -y
 sudo fc-cache -f -v
