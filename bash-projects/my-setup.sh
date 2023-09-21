@@ -3,6 +3,9 @@
 ### Update the system and install required tools ###
 sudo add-apt-repository ppa:bashtop-monitor/bashtop
 sudo add-apt-repository ppa:obsproject/obs-studio
+#nvidia repo driver
+#deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware
+#steam repo
 #deb http://deb.debian.org/debian/ bookworm main contrib non-free
 #dpkg --add-architecture i386
 sudo apt update && sudo apt upgrade -y
@@ -16,6 +19,8 @@ installs=(
   #libgtk2.0-0:i386
   #dnsmasq
   #resolvconf
+  #nvidia-driver
+  #firmware-misc-nonfree
   vim
   jq
   xclip
