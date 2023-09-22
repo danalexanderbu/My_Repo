@@ -81,7 +81,6 @@ rm "$btop_file_name"
 ### Firefox Brower ###
 sudo apt remove firefox-esr -y
 sudo apt purge firefox-esr -y
-sudo mkdir /etc/apt/keyrings/
 sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 2667CA5C
 sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
 cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
