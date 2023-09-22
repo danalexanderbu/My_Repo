@@ -55,6 +55,7 @@ declare -a urls=(
 "https://torguard.net/downloads/new/torguard-latest-amd64.deb"
 "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
 "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
+"http://reo.steampowered.com/steam/archive/precise/steam_latest.deb"
 )
 
 for url in "${urls[@]}"; do
@@ -94,9 +95,6 @@ sudo apt install firefox-mozilla-build -y
 wget https://raw.githubusercontent.com/danalexanderbu/master/bash-projects/deb_cac_setup.sh && chmod+x && sudo ./deb_cac_setup.sh
 
 ### Kubernetes ###
-
-
-### Steam ###
 
 
 ### Brave Browser ###
