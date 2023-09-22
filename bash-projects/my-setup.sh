@@ -1,7 +1,6 @@
 #!/bin/bash
 
 ### Update the system and install required tools ###
-sudo add-apt-repository ppa:bashtop-monitor/bashtop
 sudo add-apt-repository ppa:obsproject/obs-studio
 sudo apt update && sudo apt upgrade -y
 installs=(
@@ -9,7 +8,6 @@ installs=(
   vim
   jq
   xclip
-  bashtop
   wget
   curl
   python3
@@ -42,6 +40,12 @@ for package in "${installs[@]}"; do
         sudo apt install "$package" -y || { echo "Failed to install $package"; exit 1; }
     fi
 done
+
+### Install btop++ ###
+wget -qO btop.tbz https://github.com/aristocratos/btop/releases/latest/download/btop-x86_64-linux-musl.tbz 
+sudo tar xf btop.tbz --strip-components=2 -C /usr/local ./btop/bin/btop
+btop --version
+rm -rf btop.tbz
 
 ### Start steam and login ###
 steam &
