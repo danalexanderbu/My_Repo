@@ -95,7 +95,7 @@ sudo apt install firefox-mozilla-build -y
 
 
 ### CAC ###
-wget https://raw.githubusercontent.com/danalexanderbu/master/bash-projects/deb_cac_setup.sh && chmod+x && sudo ./deb_cac_setup.sh
+wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/deb_cac_setup.sh && chmod+x deb_cac_setup.sh && sudo ./deb_cac_setup.sh
 
 ### Kubernetes ###
 
