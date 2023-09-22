@@ -1,5 +1,5 @@
 #!/bin/bash
-
+##This was written for Kubuntu 22.04 LTS
 ### Update the system and install required tools ###
 sudo add-apt-repository ppa:obsproject/obs-studio
 sudo apt update && sudo apt upgrade -y
