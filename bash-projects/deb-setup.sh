@@ -35,7 +35,6 @@ install=(
     thunderbird
     ufw
     nvidia-driver
-
 )
 for p in "${install[@]}"; do
     if ! dpkg-query -Wf'${db:Status-abbrev}' "$p" 2>/dev/null | grep -q '^i'; then
@@ -55,7 +54,7 @@ declare -a urls=(
 "https://torguard.net/downloads/new/torguard-latest-amd64.deb"
 "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
 "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
-"http://reo.steampowered.com/steam/archive/precise/steam_latest.deb"
+"http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
 )
 
 for url in "${urls[@]}"; do
