@@ -249,6 +249,26 @@ yarl
 #more effecient way to install python packages than for loop
 pip3 install ${packages[@]}
 
+### Configure UFW ###
+sudo ufw enable
+#Allow git
+sudo ufw allow 22
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw allow 9418
+#Allow unraid
+sudo ufw allow from 192.168.1.133 to any port 80
+sudo ufw allow from 192.168.1.133 to any port 443
+sudo ufw allow from 192.168.1.133 to any port 137:139
+sudo ufw allow from 192.168.1.133 to any port 445
+#Allow steam
+sudo ufw allow 27000:27050/udp
+sudo ufw allow 27000:27050/tcp
+sudo ufw allow 27015:27030/udp
+sudo ufw allow 27036:27037/tcp
+sudo ufw allow 27031:27036/udp
+sudo ufw allow 4380/udp
+sudo ufw restart
 
 ### Configure .bashrc ###
 # Backup the existing .bashrc
