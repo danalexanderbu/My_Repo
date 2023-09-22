@@ -155,53 +155,6 @@ root_check ()
     fi
 } # root_check
 
-# Replace the current snap version of Firefox with the compatible apt version of Firefox
-reconfigure_firefox ()
-{
-    # Replace snap Firefox with version from PPA maintained via Mozilla
-
-    check_for_ff_pin
-
-    #Profile migration
-    backup_ff_profile
-
-    print_info "Removing Snap version of Firefox"
-    snap remove --purge firefox
-
-    print_info "Adding PPA for Mozilla maintained Firefox"
-    add-apt-repository -y ppa:mozillateam/ppa
-
-    print_info "Setting priority to prefer Mozilla PPA over snap package"
-    echo -e "Package: *\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001" > /etc/apt/preferences.d/mozilla-firefox
-
-    print_info "Enabling updates for future Firefox releases"
-    # shellcheck disable=SC2016
-    echo -e 'Unattended-Upgrade::Allowed-Origins:: "LP-PPA-mozillateam:${distro_codename}";' > /etc/apt/apt.conf.d/51unattended-upgrades-firefox
-
-    print_info "Installing Firefox via apt"
-    apt install firefox -y
-    print_info "Completed re-installation of Firefox"
-
-    # Forget the previous location of firefox executable
-    if hash firefox
-    then
-        hash -d firefox
-    fi
-
-    run_firefox
-
-    print_info "Finished, closing Firefox."
-
-    if [ "$backup_exists" == true ]
-    then
-        print_info "Migrating user profile into newly installed Firefox"
-        migrate_ff_profile "migrate"
-    fi
-
-    repin_firefox
-
-} # reconfigure_firefox
-
 run_firefox ()
 {
     print_info "Starting Firefox silently to complete post-install actions..."
