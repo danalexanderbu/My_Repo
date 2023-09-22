@@ -72,6 +72,9 @@ for url in "${urls[@]}"; do
     rm "$file_name"
 done
 
+steam &
+cd $HOME
+
 ### Btop ###
 latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .assets[11].browser_download_url)
 btop_file_name=$(basename "$latest_release_btop")
