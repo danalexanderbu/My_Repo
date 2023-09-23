@@ -1,5 +1,5 @@
 #!/bin/bash
-
+###Debian 12 approved###
 ### Apt Installs ###
 echo "blacklist nouveau" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
 echo "options nouveau modeset=0" | sudo tee -a /etc/modprobe.d/blacklist-nouveau.conf
