@@ -34,6 +34,8 @@ install=(
     aria2
     thunderbird
     ufw
+    nala
+    timeshift
     nvidia-driver
 )
 for p in "${install[@]}"; do
@@ -91,7 +93,6 @@ sudo rm ~/ubuntuzilla.gpg
 echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
 sudo apt update -y
 sudo apt install firefox-mozilla-build -y
-
 
 ### CAC ###
 wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/deb_cac_setup.sh && chmod+x deb_cac_setup.sh && sudo ./deb_cac_setup.sh
@@ -187,6 +188,25 @@ else
     mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
     rm "$file_name"
 fi
+
+### Install Obsidian ###
+latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
+wget "$latest_release_url_Obsidian"
+file_name=$(basename "$latest_release_url_Obsidian")
+sudo dpkg -i "$file_name"
+rm "$file_name"
+mkdir -p ~/.local/share/applications/
+chmod -R 755 ~/.local/share/applications/
+tee ~/.local/share/applications/Obsidian.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=ObsidianVault
+Comment=Open Obsidian with a specific vault
+Exec=obsidian --vault ~/Documents/personal/Notes
+Terminal=false
+Categories=Office;Utility;
+EOF
+sudo apt --fix-broken install -y
 
 ### Python Packages ###
 sudo apt install python3-pip -y
