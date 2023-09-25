@@ -37,6 +37,7 @@ install=(
     nala
     timeshift
     nvidia-driver
+    nfs-common
 )
 for p in "${install[@]}"; do
     if ! dpkg-query -Wf'${db:Status-abbrev}' "$p" 2>/dev/null | grep -q '^i'; then
