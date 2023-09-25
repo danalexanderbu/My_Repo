@@ -38,6 +38,7 @@ install=(
     timeshift
     nvidia-driver
     nfs-common
+    neofetch
 )
 for p in "${install[@]}"; do
     if ! dpkg-query -Wf'${db:Status-abbrev}' "$p" 2>/dev/null | grep -q '^i'; then
