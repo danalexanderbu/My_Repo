@@ -39,6 +39,7 @@ install=(
     #nvidia-driver
     nfs-common
     neofetch
+    curl
     lsb-release
 )
 for p in "${install[@]}"; do
