@@ -494,12 +494,25 @@ source ~/.bashrc
 
 ### Configure fstab ###
 # Create the mount points
-sudo mkdir /mnt/Movies
-sudo mkdir /mnt/TV
-sudo mkdir /mnt/Disney\ Movies
+#sudo mkdir /mnt/Movies
+#sudo mkdir /mnt/TV
+#sudo mkdir /mnt/Disney\ Movies
 # Add the mount points to fstab
-echo "192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
-echo "192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0" | sudo tee -a /etc/fstab
-echo "192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
+#echo "192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
+#echo "192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0" | sudo tee -a /etc/fstab
+#echo "192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
+
+### Configure Theme ###
+cd $HOME/Documents/
+git clone https://github.com/vinceliuice/Layan-kde.git
+cd Layan-kde
+./install.sh
+lookandfeeltool -a Layan
+kwriteconfig5 --file kdeglobals --group General --key ColorScheme Layan
+if command -v kvantummanager &> /dev/null
+then
+    kvantummanager --set Layan
+fi
+echo "Layan theme has been installed and applied."
 
 echo "All tasks completed successfully. Starting Kubernetes and Git installation..."
