@@ -127,9 +127,9 @@ chmod 700 ~/.mycerts
 git config --global user.name "Daniel Burke"
 git config --global user.email "daniel.burke.13@us.af.mil"
 git config --global core.editor "vscode"
-git config --global --unset http.sslBackend
-git config --global --unset http.sslcert
-git config --global --unset http.sslcrlfile
+#git config --global --unset http.sslBackend
+#git config --global --unset http.sslcert
+#git config --global --unset http.sslcrlfile
 git config --global http.sslBackend openssl
 #git config --global http.sslCAInfo ~/.mycerts/dod_cert_bundle.pem
 git config --global http.sslverify false
