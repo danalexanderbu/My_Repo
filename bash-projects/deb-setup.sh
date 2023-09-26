@@ -516,3 +516,4 @@ fi
 echo "Layan theme has been installed and applied."
 
 echo "All tasks completed successfully. Starting Kubernetes and Git installation..."
+sudo reboot
