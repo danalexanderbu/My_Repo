@@ -53,11 +53,11 @@ sudo apt update -y && sudo apt upgrade -y
 
 ### Download and Install DEB Packages ###
 declare -a urls=(
-"https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
+#"https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
 "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
 "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
 "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
-"https://torguard.net/downloads/new/torguard-latest-amd64.deb"
+#"https://torguard.net/downloads/new/torguard-latest-amd64.deb"
 "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
 "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
 #"http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
@@ -84,7 +84,10 @@ done
 latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .assets[11].browser_download_url)
 btop_file_name=$(basename "$latest_release_btop")
 wget "$latest_release_btop" -O "$btop_file_name"
-sudo dpkg -i "$btop_file_name" || sudo apt --fix-broken install -y
+tar -xjf "$btop_file_name"
+cd btop
+./install.sh
+cd $HOME
 rm "$btop_file_name"
 
 ### Firefox Brower ###
@@ -111,9 +114,7 @@ sudo apt update -y && sudo apt install brave-browser -y
 
 ### Git ###
 #make git from source
-wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/git-openssl.sh
-chmod +x git-openssl.sh
-./git-openssl.sh
+wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/git-openssl.sh && chmod +x git-openssl.sh && ./git-openssl.sh
 rm git-openssl.sh
 cd $HOME
 mkdir ~/.mycerts
@@ -131,7 +132,7 @@ git config --global core.editor "vscode"
 #git config --global --unset http.sslBackend
 #git config --global --unset http.sslcert
 #git config --global --unset http.sslcrlfile
-git config --global http.sslBackend openssl
+#git config --global http.sslBackend openssl
 #git config --global http.sslCAInfo ~/.mycerts/dod_cert_bundle.pem
 git config --global http.sslverify false
 git config --global http.sslverify true
@@ -162,7 +163,7 @@ echo -e "Host github.com\n  IdentityFile ~/.ssh/github_ssh_key" >> ~/.ssh/config
 # Inform user to continue with cloning
 echo "You can now clone your repositories."
 # Clone the repositories into their respective folders
-git clone git@github.com:danalexanderbu/personal.git personal || { echo "Failed to clone personal"; exit 1; }
+#git clone git@github.com:danalexanderbu/personal.git personal || { echo "Failed to clone personal"; exit 1; }
 git clone git@github.com:danalexanderbu/My_Repo.git My_Repo || { echo "Failed to clone My_Repo"; exit 1; }
 cd $HOME
 echo "Repositories have been cloned!"
@@ -174,7 +175,7 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 
 ### Battle.net Installation ###
 # Add a non steam game to steam called Battle.net and install it
-wget "https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&gameProgram=BATTLENET_APP" -O "Battle.net-Setup.exe"
+#wget "https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&gameProgram=BATTLENET_APP" -O "Battle.net-Setup.exe"
 
 ### Proton GE Custom Installation ###
 #latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
@@ -339,27 +340,27 @@ sudo ufw enable
 sudo ufw allow 22
 sudo ufw allow 80
 sudo ufw allow 443
-sudo ufw allow 9418
+#sudo ufw allow 9418
 #Allow unraid
-sudo ufw allow from 192.168.1.133 to any port 80
-sudo ufw allow from 192.168.1.133 to any port 443
-sudo ufw allow from 192.168.1.133 to any port 137:139
-sudo ufw allow from 192.168.1.133 to any port 445
+#sudo ufw allow from 192.168.1.133 to any port 80
+#sudo ufw allow from 192.168.1.133 to any port 443
+#sudo ufw allow from 192.168.1.133 to any port 137:139
+#sudo ufw allow from 192.168.1.133 to any port 445
 #Allow steam
-sudo ufw allow 27000:27050/udp
-sudo ufw allow 27000:27050/tcp
-sudo ufw allow 27015:27030/udp
-sudo ufw allow 27036:27037/tcp
-sudo ufw allow 27031:27036/udp
-sudo ufw allow 4380/udp
+#sudo ufw allow 27000:27050/udp
+#sudo ufw allow 27000:27050/tcp
+#sudo ufw allow 27015:27030/udp
+#sudo ufw allow 27036:27037/tcp
+#sudo ufw allow 27031:27036/udp
+#sudo ufw allow 4380/udp
 sudo ufw restart
 
 ### Configure .bashrc ###
 # Backup the existing .bashrc
 cp ~/.bashrc ~/.bashrc_backup
 # Append the new content to .bashrc using tee
-cat << 'EOF' | tee -a ~/.bashrc > /dev/null
 ### My custom .bashrc file ###
+cat << 'EOF' | tee -a ~/.bashrc > /dev/null
 # Don't put duplicate lines in the history and do not add lines that start with a space
 export HISTCONTROL=erasedups:ignoredups:ignorespace
 
@@ -582,5 +583,5 @@ kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme Layan
 kwriteconfig5 --file ksmserverrc --group KSMServer --key splash Layan
 echo "Layan theme has been installed and applied."
 
-echo "All tasks completed successfully. Starting Kubernetes and Git installation..."
-sudo reboot
+echo "All tasks completed successfully."
+#sudo reboot
