@@ -565,15 +565,20 @@ source ~/.bashrc
 
 ### Configure Theme ###
 cd $HOME/Documents/
+# Clone the Layan-kde repository from GitHub to the current directory (Documents)
 git clone https://github.com/vinceliuice/Layan-kde.git
 cd Layan-kde
 ./install.sh
+# Set the global theme to Layan using the lookandfeeltool
 lookandfeeltool -a Layan
+# Set the color scheme to Layan using kwriteconfig5
 kwriteconfig5 --file kdeglobals --group General --key ColorScheme Layan
-if command -v kvantummanager &> /dev/null
-then
-    kvantummanager --set Layan
-fi
+# Set the plasma theme to Layan using kwriteconfig5
+kwriteconfig5 --file kdeglobals --group KDE --key PlasmaTheme Layan
+# Set the window decoration to Layan using kwriteconfig5
+kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme Layan
+# Set the splash screen to Layan using kwriteconfig5
+kwriteconfig5 --file ksmserverrc --group KSMServer --key splash Layan
 echo "Layan theme has been installed and applied."
 
 echo "All tasks completed successfully. Starting Kubernetes and Git installation..."
