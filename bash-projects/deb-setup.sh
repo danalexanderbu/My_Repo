@@ -59,7 +59,7 @@ declare -a urls=(
 "https://torguard.net/downloads/new/torguard-latest-amd64.deb"
 "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
 "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
-"http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
+#"http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
 )
 
 for url in "${urls[@]}"; do
@@ -76,8 +76,8 @@ for url in "${urls[@]}"; do
     rm "$file_name"
 done
 
-steam &
-cd $HOME
+#steam &
+#cd $HOME
 
 ### Btop ###
 latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .assets[11].browser_download_url)
@@ -176,25 +176,25 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 wget "https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&gameProgram=BATTLENET_APP" -O "Battle.net-Setup.exe"
 
 ### Proton GE Custom Installation ###
-latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
-file_name=$(basename "$latest_release_url_GE")
-wget "$latest_release_url_GE" -O "$file_name"
-folder_name=$(basename "$file_name" .tar.gz)
+#latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
+#file_name=$(basename "$latest_release_url_GE")
+#wget "$latest_release_url_GE" -O "$file_name"
+#folder_name=$(basename "$file_name" .tar.gz)
 # Check if the latest GE folder is already there
-if [ -d "$HOME/.steam/steam/compatibilitytools.d/$folder_name" ]; then
-    echo "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file."
-    rm "$file_name"
-else
-    tar -xzvf "$file_name"
+#if [ -d "$HOME/.steam/steam/compatibilitytools.d/$folder_name" ]; then
+#    echo "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file."
+#    rm "$file_name"
+#else
+#    tar -xzvf "$file_name"
     
     # Create directory if it doesn't exist
-    if [ ! -d "$HOME/.steam/steam/compatibilitytools.d" ]; then
-        mkdir "$HOME/.steam/steam/compatibilitytools.d"
-    fi
+#    if [ ! -d "$HOME/.steam/steam/compatibilitytools.d" ]; then
+#        mkdir "$HOME/.steam/steam/compatibilitytools.d"
+#    fi
     
-    mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
-    rm "$file_name"
-fi
+#    mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
+#    rm "$file_name"
+#fi
 
 ### Install Obsidian ###
 latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
