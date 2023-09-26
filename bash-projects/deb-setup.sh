@@ -142,10 +142,6 @@ cd "$DOCUMENTS_DIR" || { echo "Failed to switch to the Documents directory"; exi
 if [ ! -f ~/.ssh/github_ssh_key ]; then
     # 1. Generate SSH Key (without passphrase for automation; you can modify as needed)
     ssh-keygen -t ed25519 -C "danalexanderbu@gmail.com" -f ~/.ssh/github_ssh_key || { echo "SSH key generation failed"; exit 1; }
-    # 2. Start the ssh-agent in the background
-    eval "$(ssh-agent -s)"
-    ssh-add ~/.ssh/github_ssh_key || { echo "Failed to add SSH key to agent"; exit 1; }
-    
     # 3. Prompt user to manually add the public key to GitHub
     echo "Please add the following SSH key to your GitHub account:"
     cat ~/.ssh/github_ssh_key.pub
@@ -154,6 +150,14 @@ if [ ! -f ~/.ssh/github_ssh_key ]; then
 else
     echo "SSH key already exists. Skipping generation..."
 fi
+# 2. Start the ssh-agent in the background and add the SSH key
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/github_ssh_key || { echo "Failed to add SSH key to agent"; exit 1; }
+# Update or create SSH config to use the specific key for GitHub
+if [ ! -f ~/.ssh/config ]; then
+    touch ~/.ssh/config
+fi
+echo -e "Host github.com\n  IdentityFile ~/.ssh/github_ssh_key" >> ~/.ssh/config
 # Inform user to continue with cloning
 echo "You can now clone your repositories."
 # Clone the repositories into their respective folders
