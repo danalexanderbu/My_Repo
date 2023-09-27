@@ -20,6 +20,7 @@ install=(
     openssl
     qbittorrent
     ttf-mscorefonts-installer
+    python3
     python3-pip
     vim
     ethtool
@@ -274,7 +275,6 @@ VBoxManage startvm $VM_NAME
 echo "VM created and ISO attached. You can now start the VM from VirtualBox."
 
 ### Python Packages ###
-sudo apt install python3-pip -y
 packages=(
 aiohttp
 aiosignal
@@ -332,7 +332,7 @@ xlwt
 yarl
 )
 #more effecient way to install python packages than for loop
-pip3 install ${packages[@]}
+pip3 install ${packages[@]} --break-system-packages
 
 ### Configure UFW ###
 sudo ufw enable
@@ -372,8 +372,6 @@ export LESS_TERMCAP_se=$'\E[0m'
 export LESS_TERMCAP_so=$'\E[01;44;33m'
 export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[01;32m'
-
-export JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64
 
 #My custom aliases
 alias uu="sudo apt update && sudo apt upgrade"
@@ -581,7 +579,5 @@ kwriteconfig5 --file kdeglobals --group KDE --key PlasmaTheme Layan
 kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme Layan
 # Set the splash screen to Layan using kwriteconfig5
 kwriteconfig5 --file ksmserverrc --group KSMServer --key splash Layan
-echo "Layan theme has been installed and applied."
 
 echo "All tasks completed successfully."
-#sudo reboot
