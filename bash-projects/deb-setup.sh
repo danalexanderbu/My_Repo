@@ -42,6 +42,7 @@ install=(
     neofetch
     curl
     lsb-release
+    unattended-upgrades
 )
 for p in "${install[@]}"; do
     if ! dpkg-query -Wf'${db:Status-abbrev}' "$p" 2>/dev/null | grep -q '^i'; then
@@ -51,6 +52,7 @@ done
 sudo fc-cache -f -v
 sudo apt install $(check-language-support) -y
 sudo apt update -y && sudo apt upgrade -y
+sudo apt remove --purge kwalletmanager
 
 ### Download and Install DEB Packages ###
 declare -a urls=(
@@ -562,6 +564,17 @@ source ~/.bashrc
 #echo "192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
 #echo "192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0" | sudo tee -a /etc/fstab
 #echo "192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
+
+### Automate Security Updates ###
+echo 'Unattended-Upgrade::Allowed-Origins {' | sudo tee /etc/apt/apt.conf.d/50unattended-upgrades
+echo '        "${distro_id}:${distro_codename}-security";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+echo '//      "${distro_id}:${distro_codename}-updates";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+echo '};' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+echo 'APT::Periodic::Update-Package-Lists "1";' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades
+echo 'APT::Periodic::Download-Upgradeable-Packages "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+echo 'APT::Periodic::AutocleanInterval "7";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+echo 'APT::Periodic::Unattended-Upgrade "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+
 
 ### Configure Theme ###
 cd $HOME/Documents/
