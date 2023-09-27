@@ -37,7 +37,7 @@ install=(
     ufw
     nala
     timeshift
-    #nvidia-driver
+    nvidia-driver
     nfs-common
     neofetch
     curl
