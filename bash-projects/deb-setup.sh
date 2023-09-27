@@ -568,14 +568,14 @@ echo "192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0" | sudo tee -a /etc/fs
 echo "192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
 
 ### Automate Security Updates ###
-echo 'Unattended-Upgrade::Allowed-Origins {' | sudo tee /etc/apt/apt.conf.d/50unattended-upgrades
-echo '        "${distro_id}:${distro_codename}-security";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-echo '//      "${distro_id}:${distro_codename}-updates";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-echo '};' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-echo 'APT::Periodic::Update-Package-Lists "1";' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades
-echo 'APT::Periodic::Download-Upgradeable-Packages "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
-echo 'APT::Periodic::AutocleanInterval "7";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
-echo 'APT::Periodic::Unattended-Upgrade "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+#echo 'Unattended-Upgrade::Allowed-Origins {' | sudo tee /etc/apt/apt.conf.d/50unattended-upgrades
+#echo '        "${distro_id}:${distro_codename}-security";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+#echo '//      "${distro_id}:${distro_codename}-updates";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+#echo '};' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+#echo 'APT::Periodic::Update-Package-Lists "1";' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades
+#echo 'APT::Periodic::Download-Upgradeable-Packages "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+#echo 'APT::Periodic::AutocleanInterval "7";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+#echo 'APT::Periodic::Unattended-Upgrade "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
 
 
 ### Configure Theme ###
