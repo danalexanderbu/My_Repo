@@ -129,8 +129,11 @@ openssl pkcs7 -print_certs -in certificates_pkcs7_v5_12_dod_pem.p7b -out dod_cer
 chmod 600 ~/.mycerts/certificates_pkcs7_v5_12_dod/dod_cert_bundle.pem
 cd $HOME
 chmod 700 ~/.mycerts
-git config --global user.name "Daniel Burke"
-git config --global user.email "daniel.burke.13@us.af.mil"
+# Prompt the user for their name and email
+read -p "Please enter your name: " name
+read -p "Please enter your email: " email
+git config --global user.name "$name"
+git config --global user.email "$email"
 git config --global core.editor "vscode"
 #git config --global --unset http.sslBackend
 #git config --global --unset http.sslcert
@@ -167,9 +170,8 @@ echo -e "Host github.com\n  IdentityFile ~/.ssh/github_ssh_key" >> ~/.ssh/config
 echo "You can now clone your repositories."
 # Clone the repositories into their respective folders
 #git clone git@github.com:danalexanderbu/personal.git personal || { echo "Failed to clone personal"; exit 1; }
-git clone git@github.com:danalexanderbu/My_Repo.git My_Repo || { echo "Failed to clone My_Repo"; exit 1; }
+#git clone git@github.com:danalexanderbu/My_Repo.git My_Repo || { echo "Failed to clone My_Repo"; exit 1; }
 cd $HOME
-echo "Repositories have been cloned!"
 
 ### Flatpak ###
 sudo apt install flatpak
