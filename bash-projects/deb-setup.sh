@@ -378,7 +378,7 @@ export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[01;32m'
 
 #My custom aliases
-alias uu="sudo apt update && sudo apt upgrade"
+alias uu="sudo nala update && sudo nala upgrade"
 
 # Alias's for multiple directory listing commands
 alias la='ls -Alh' # show hidden files
