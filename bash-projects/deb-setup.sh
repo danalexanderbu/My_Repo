@@ -91,7 +91,7 @@ tar -xjf "$btop_file_name"
 cd btop
 ./install.sh
 cd $HOME
-rm "$btop_file_name"
+rm -r "$btop_file_name"
 
 ### Firefox Brower ###
 sudo apt remove firefox-esr -y
