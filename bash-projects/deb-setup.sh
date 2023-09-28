@@ -584,19 +584,12 @@ cd $HOME/Documents/
 git clone https://github.com/vinceliuice/Layan-kde.git
 cd Layan-kde
 ./install.sh
-# Set the global theme to Layan using the lookandfeeltool
-lookandfeeltool -a Layan
-# Set the color scheme to Layan using kwriteconfig5
-kwriteconfig5 --file kdeglobals --group General --key ColorScheme Layan
-# Set the plasma theme to Layan using kwriteconfig5
-kwriteconfig5 --file kdeglobals --group KDE --key PlasmaTheme Layan
-# Set the window decoration to Layan-light using kwriteconfig5
-kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme Layan-light
-# Set the splash screen to Layan using kwriteconfig5
-kwriteconfig5 --file ksmserverrc --group KSMServer --key splash Layan
-# Set the icon theme to Tela using kwriteconfig5
-kwriteconfig5 --file kdeglobals --group Icons --key Theme Tela
-# Set the cursor theme to Breeze_Snow using kwriteconfig5
-kwriteconfig5 --file kdeglobals --group Cursors --key Theme Breeze
+cd $HOME/Documents/
+# Clone the Tela-icon-theme repository from GitHub to the current directory (Documents) 
+git clone https://github.com/vinceliuice/Tela-icon-theme.git
+cd Tela-icon-theme
+# Install the Tela icon theme 
+./install.sh
+cd $HOME
 
 echo "All tasks completed successfully."
