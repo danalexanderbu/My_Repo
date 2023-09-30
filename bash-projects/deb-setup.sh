@@ -340,10 +340,11 @@ pip3 install ${packages[@]} --break-system-packages
 
 ### Configure UFW ###
 sudo ufw enable
-#Allow git
-sudo ufw allow 22
+#Allow internet
 sudo ufw allow 80
 sudo ufw allow 443
+#Allow Git
+sudo ufw allow 22
 sudo ufw allow 9418
 #Allow unraid
 sudo ufw allow from 192.168.1.133 to any port 80
