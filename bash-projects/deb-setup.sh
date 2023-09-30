@@ -60,7 +60,7 @@ declare -a urls=(
 "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
 "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
 "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
-"https://torguard.net/downloads/new/torguard-latest-amd64.deb"
+"https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
 "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
 "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
 "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
