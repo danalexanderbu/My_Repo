@@ -51,8 +51,8 @@ for p in "${install[@]}"; do
 done
 sudo fc-cache -f -v
 sudo apt install $(check-language-support) -y
-sudo apt update -y && sudo apt upgrade -y
 sudo apt remove --purge kwalletmanager
+sudo apt update -y && sudo apt upgrade -y
 
 ### Download and Install DEB Packages ###
 declare -a urls=(
