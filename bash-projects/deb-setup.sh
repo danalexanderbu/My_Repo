@@ -36,6 +36,7 @@ install=(
     thunderbird
     ufw
     nala
+    kitty
     timeshift
     nvidia-driver
     nfs-common
@@ -81,6 +82,98 @@ for url in "${urls[@]}"; do
 done
 
 steam &
+cd $HOME
+
+### Kitty Terminal ###
+# Open the kitty terminal and wait 5 seconds for it to create the config directory
+kitty & 
+sleep 5
+# Create the kitty config dotfiles directory
+if [ ! -d "$HOME/.config/kitty" ]; then
+    mkdir -p "$HOME/.config/kitty"
+fi
+cd $HOME/.config/kitty
+wget https://github.com/ryanoasis/nerd-fonts.git -O nerd-fonts.zip
+unzip nerd-fonts.zip
+sudo mv nerd-fonts /usr/share/fonts
+fc-cache -fv
+tee ~/.config/kitty/kitty.conf <<EOF
+# Layan theme inspired kitty configuration
+
+shell bash -c "neofetch; exec bash"
+
+# Font and size
+font_family      Fira Code Regular Nerd Font Complete Mono
+font_size        12.0
+
+# Window padding
+window_padding_width 10
+window_padding_height 10
+
+# Colors
+foreground       #00FF00
+background       #2E3440
+background_opacity 0.8
+
+# Normal colors
+color0           #3B4252
+color1           #BF616A
+color2           #A3BE8C
+color3           #EBCB8B
+color4           #81A1C1
+color5           #B48EAD
+color6           #88C0D0
+color7           #E5E9F0
+
+# Bright colors
+color8           #4C566A
+color9           #BF616A
+color10          #A3BE8C
+color11          #EBCB8B
+color12          #81A1C1
+color13          #B48EAD
+color14          #8FBCBB
+color15          #ECEFF4
+
+# Cursor
+shell_integration no-cursor
+cursor_shape 	block
+cursor           #D8DEE9
+cursor_text_color #2E3440
+cursor_blink_internal 5
+
+# Selection
+selection_foreground #2E3440
+selection_background #88C0D0
+
+# Borders
+active_border_color   #5E81AC
+inactive_border_color #4C566A
+enable_tab_bar yes
+tab_bar_border_width 0
+tab_bar_border_color #4C566A
+tab_bar_background_color #2E3440
+tab_bar_foreground_color #ECEFF4
+tab_bar_font_size 12.0
+tab_bar_font_family Fira Code
+tab_bar_padding 10.0
+tab_bar_margin_top 10.0
+tab_bar_margin_bottom 10.0
+tab_bar_margin_left 10.0
+tab_bar_margin_right 10.0
+
+# Scrolling
+scrollback_lines 2000
+scrollback_pager less --chop-long-lines --RAW-CONTROL-CHARS
+
+# Mouse
+mouse_hide_wait 0.5
+strip_trailing_spaces never
+EOF
+# Set kitty as the default terminal
+sudo update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/bin/kitty 50
+sudo update-alternatives --config x-terminal-emulator
+
 cd $HOME
 
 ### Btop ###
