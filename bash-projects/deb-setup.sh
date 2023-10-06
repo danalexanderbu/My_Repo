@@ -102,8 +102,8 @@ sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
 cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
 sudo rm ~/ubuntuzilla.gpg
 echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
-sudo apt update -y
-sudo apt install firefox-mozilla-build -y
+sudo nala update -y && sudo nala upgrade -y
+sudo nala install firefox-mozilla-build -y
 
 ### CAC ###
 wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/deb_cac_setup.sh && chmod +x deb_cac_setup.sh && sudo ./deb_cac_setup.sh
@@ -175,103 +175,10 @@ git clone git@github.com:danalexanderbu/My_Repo.git My_Repo || { echo "Failed to
 cd $HOME
 
 ### Flatpak ###
-sudo apt install flatpak
-sudo apt install plasma-discover-backend-flatpak
+sudo nala install flatpak
+sudo nala install plasma-discover-backend-flatpak
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub com.usebottles.bottles -y
-
-### Kitty Terminal ###
-# Open the kitty terminal and wait 5 seconds for it to create the config directory
-kitty & 
-sleep 5
-# Create the kitty config dotfiles directory
-if [ ! -d "$HOME/.config/kitty" ]; then
-    mkdir -p "$HOME/.config/kitty"
-fi
-cd $HOME/.config/kitty
-git clone https://github.com/ryanoasis/nerd-fonts.git 
-cd nerd-fonts
-./install.sh
-fc-cache -fv
-cd $HOME/.config/kitty
-tee ~/.config/kitty/kitty.conf <<EOF
-# Layan theme inspired kitty configuration
-
-shell bash -c "neofetch; exec bash"
-
-# Font and size
-font_family      Fira Code Regular Nerd Font Complete Mono
-font_size        12.0
-
-# Window padding
-window_padding_width 10
-window_padding_height 10
-
-# Colors
-foreground       #00FF00
-background       #2E3440
-background_opacity 0.8
-
-# Normal colors
-color0           #3B4252
-color1           #BF616A
-color2           #A3BE8C
-color3           #EBCB8B
-color4           #81A1C1
-color5           #B48EAD
-color6           #88C0D0
-color7           #E5E9F0
-
-# Bright colors
-color8           #4C566A
-color9           #BF616A
-color10          #A3BE8C
-color11          #EBCB8B
-color12          #81A1C1
-color13          #B48EAD
-color14          #8FBCBB
-color15          #ECEFF4
-
-# Cursor
-shell_integration no-cursor
-cursor_shape 	block
-cursor           #D8DEE9
-cursor_text_color #2E3440
-cursor_blink_internal 5
-
-# Selection
-selection_foreground #2E3440
-selection_background #88C0D0
-
-# Borders
-active_border_color   #5E81AC
-inactive_border_color #4C566A
-enable_tab_bar yes
-tab_bar_border_width 0
-tab_bar_border_color #4C566A
-tab_bar_background_color #2E3440
-tab_bar_foreground_color #ECEFF4
-tab_bar_font_size 12.0
-tab_bar_font_family Fira Code
-tab_bar_padding 10.0
-tab_bar_margin_top 10.0
-tab_bar_margin_bottom 10.0
-tab_bar_margin_left 10.0
-tab_bar_margin_right 10.0
-
-# Scrolling
-scrollback_lines 2000
-scrollback_pager less --chop-long-lines --RAW-CONTROL-CHARS
-
-# Mouse
-mouse_hide_wait 0.5
-strip_trailing_spaces never
-EOF
-# Set kitty as the default terminal
-sudo update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/bin/kitty 50
-sudo update-alternatives --config x-terminal-emulator
-
-cd $HOME
 
 ### Battle.net Installation ###
 # Add a non steam game to steam called Battle.net and install it
