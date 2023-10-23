@@ -100,8 +100,8 @@ sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
 cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
 sudo rm ~/ubuntuzilla.gpg
 echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
-sudo nala update -y && sudo nala upgrade -y
-sudo nala install firefox-mozilla-build -y
+sudo apt update -y && sudo apt upgrade -y
+sudo apt install firefox-mozilla-build -y
 
 ### CAC ###
 wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/deb_cac_setup.sh && chmod +x deb_cac_setup.sh && sudo ./deb_cac_setup.sh
@@ -173,8 +173,8 @@ git clone git@github.com:danalexanderbu/My_Repo.git My_Repo || { echo "Failed to
 cd $HOME
 
 ### Flatpak ###
-sudo nala install flatpak
-sudo nala install plasma-discover-backend-flatpak
+sudo apt install flatpak
+sudo apt install plasma-discover-backend-flatpak
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub com.usebottles.bottles -y
 
@@ -379,7 +379,7 @@ export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[01;32m'
 
 #My custom aliases
-alias uu="sudo nala update && sudo nala upgrade"
+alias uu="sudo apt update && sudo apt upgrade"
 
 # Alias's for multiple directory listing commands
 alias la='ls -Alh' # show hidden files
