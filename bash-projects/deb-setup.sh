@@ -35,8 +35,6 @@ install=(
     aria2
     thunderbird
     ufw
-    nala
-    kitty
     timeshift
     nvidia-driver
     nfs-common
