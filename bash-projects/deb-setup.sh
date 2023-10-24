@@ -133,11 +133,7 @@ read -p "Please enter your name: " name
 read -p "Please enter your email: " email
 git config --global user.name "$name"
 git config --global user.email "$email"
-git config --global core.editor "vscode"
-#git config --global --unset http.sslBackend
-#git config --global --unset http.sslcert
-#git config --global --unset http.sslcrlfile
-#git config --global http.sslBackend openssl
+git config --global core.editor "code"
 #git config --global http.sslCAInfo ~/.mycerts/dod_cert_bundle.pem
 git config --global http.sslverify false
 git config --global http.sslverify true
@@ -209,17 +205,6 @@ wget "$latest_release_url_Obsidian"
 file_name=$(basename "$latest_release_url_Obsidian")
 sudo dpkg -i "$file_name"
 rm "$file_name"
-mkdir -p ~/.local/share/applications/
-chmod -R 755 ~/.local/share/applications/
-tee ~/.local/share/applications/Obsidian.desktop <<EOF
-[Desktop Entry]
-Type=Application
-Name=ObsidianVault
-Comment=Open Obsidian with a specific vault
-Exec=obsidian --vault ~/Documents/personal/Notes
-Terminal=false
-Categories=Office;Utility;
-EOF
 sudo apt --fix-broken install -y
 
 ### VirtualBox Installation ###
@@ -244,39 +229,8 @@ newgrp vboxusers
 wget https://download.virtualbox.org/virtualbox/7.0.10/Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
 # Install the Oracle VM VirtualBox Extension Pack
 sudo vboxmanage extpack install Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
-# VM Configuration Variables
-VM_NAME="Windows11_VM"
-#ISO_PATH="Windows11.iso"
-VM_HDD_PATH="$VM_NAME.vdi"
-VM_HDD_SIZE="75000"  # 75GB
-VM_RAM="4096"        # 4GB
-VM_VRAM="128"        # 128MB
-#Download Windows 11 ISO from google drive so it can be used consistently
-FILE_ID="1WzDO6lPa4zb9mqxNewz6pahopoLTbczz"
-CONFIRM=$(curl -sc /tmp/gcookie "https://drive.google.com/uc?export=download&id=${FILE_ID}" | grep -o 'confirm=[^&]*' | sed 's/confirm=//')
-curl -Lb /tmp/gcookie "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILE_ID}" -o Windows11.iso
-# Check if curl was successful and the file has a reasonable size (here, I'm assuming at least 1GB(1B bytes) for the ISO)
-if [ $? -ne 0 ] || [ $(stat -c %s "$ISO_PATH") -lt 1000000000 ]; then
-    echo "Error: Windows 11 ISO download failed or file is incomplete. Exiting."
-    exit 1
-fi
-# Create the VM in VirtualBox
-VBoxManage createvm --name $VM_NAME --ostype "Windows10_64" --register
-# Set VM resources
-VBoxManage modifyvm $VM_NAME --memory $VM_RAM --vram $VM_VRAM
-# Create virtual hard drive for the VM
-VBoxManage createhd --filename $VM_HDD_PATH --size $VM_HDD_SIZE
-# Attach HDD to the VM
-VBoxManage storagectl $VM_NAME --name "SATA Controller" --add sata --controller IntelAhci
-VBoxManage storageattach $VM_NAME --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $VM_HDD_PATH
-# Attach ISO (Windows 11 installation media) to the VM
-VBoxManage storagectl $VM_NAME --name "IDE Controller" --add ide
-VBoxManage storageattach $VM_NAME --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium $ISO_PATH
-# Set up Bridged Networking for VM
-#VBoxManage modifyvm $VM_NAME --nic1 bridged --bridgeadapter1 "$(VBoxManage list bridgedifs | head -n 1 | cut -d ':' -f 2 | xargs)"
- Start the VM (Optional - Uncomment if you want to automatically start the VM after creation)
-#VBoxManage startvm $VM_NAME
-echo "VM created and ISO attached. You can now start the VM from VirtualBox."
+# Remove the downloaded Oracle VM VirtualBox Extension Pack
+rm Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
 
 ### Python Packages ###
 packages=(
