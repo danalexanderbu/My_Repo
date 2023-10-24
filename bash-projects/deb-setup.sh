@@ -593,4 +593,108 @@ cd Tela-icon-theme
 ./install.sh
 cd $HOME
 
+
+### Custome keybindings ###
+# Create the custom keybindings file
+mkdir -p ~/.keybindings
+tee ~/.keybindings/custom.keybindings <<EOF
+[Data]
+DataCount=1
+
+[Data_1]
+Comment=Comment
+DataCount=3
+Enabled=true
+Name=Custom-launches
+SystemGroup=0
+Type=ACTION_DATA_GROUP
+
+[Data_1Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_1]
+Comment=launches firefox
+Enabled=true
+Name=firefox
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_1Actions]
+ActionsCount=1
+
+[Data_1_1Actions0]
+CommandURL=firefox
+Type=COMMAND_URL
+
+[Data_1_1Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_1Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_1Triggers0]
+Key=Ctrl+Alt+F
+Type=SHORTCUT
+Uuid={0cf7902b-6d51-483d-b656-7fdb427ee224}
+
+[Data_1_2]
+Comment=launches brave browser
+Enabled=true
+Name=brave
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_2Actions]
+ActionsCount=1
+
+[Data_1_2Actions0]
+CommandURL=brave-browser
+Type=COMMAND_URL
+
+[Data_1_2Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_2Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_2Triggers0]
+Key=Ctrl+Alt+B
+Type=SHORTCUT
+Uuid={743534d6-ed1e-43ad-a1ef-8c449dba2594}
+
+[Data_1_3]
+Comment=launches google chrome
+Enabled=true
+Name=google
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_3Actions]
+ActionsCount=1
+
+[Data_1_3Actions0]
+CommandURL=google-chrome
+Type=COMMAND_URL
+
+[Data_1_3Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_3Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_3Triggers0]
+Key=Ctrl+Alt+G
+Type=SHORTCUT
+Uuid={57805a1d-97b5-4458-b94b-0249cb9b4fc2}
+
+[Main]
+AllowMerge=false
+ImportId=69
+Version=2
+EOF
+
 echo "All tasks completed successfully."
