@@ -593,7 +593,6 @@ cd Tela-icon-theme
 ./install.sh
 cd $HOME
 
-
 ### Custome keybindings ###
 # Create the custom keybindings file
 mkdir -p ~/.keybindings
@@ -603,7 +602,7 @@ DataCount=1
 
 [Data_1]
 Comment=Comment
-DataCount=3
+DataCount=6
 Enabled=true
 Name=Custom-launches
 SystemGroup=0
@@ -691,8 +690,86 @@ Key=Ctrl+Alt+G
 Type=SHORTCUT
 Uuid={57805a1d-97b5-4458-b94b-0249cb9b4fc2}
 
+[Data_1_4]
+Comment=brave incognito
+Enabled=true
+Name=brave-incognito
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_4Actions]
+ActionsCount=1
+
+[Data_1_4Actions0]
+CommandURL=brave-browser -incognito
+Type=COMMAND_URL
+
+[Data_1_4Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_4Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_4Triggers0]
+Key=Ctrl+Alt+I
+Type=SHORTCUT
+Uuid={effa10da-83a8-45ae-8da0-3ac20b5ed258}
+
+[Data_1_5]
+Comment=launches vscode
+Enabled=true
+Name=vscode
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_5Actions]
+ActionsCount=1
+
+[Data_1_5Actions0]
+CommandURL=code
+Type=COMMAND_URL
+
+[Data_1_5Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_5Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_5Triggers0]
+Key=Ctrl+Alt+V
+Type=SHORTCUT
+Uuid={ecc50121-e337-4738-b7ba-3f381f521d76}
+
+[Data_1_6]
+Comment=launches kate
+Enabled=true
+Name=kate
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_6Actions]
+ActionsCount=1
+
+[Data_1_6Actions0]
+CommandURL=kate
+Type=COMMAND_URL
+
+[Data_1_6Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_6Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_6Triggers0]
+Key=Ctrl+Alt+K
+Type=SHORTCUT
+Uuid={c36dfafa-11aa-4311-a19e-fcd2aa07d79f}
+
 [Main]
-AllowMerge=false
+AllowMerge=true
 ImportId=69
 Version=2
 EOF
