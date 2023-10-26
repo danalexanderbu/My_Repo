@@ -1,55 +1,57 @@
 #!/bin/bash
-##This was written for Kubuntu 22.04 LTS
-### Update the system and install required tools ###
-sudo add-apt-repository ppa:obsproject/obs-studio
-sudo apt update && sudo apt upgrade -y
-installs=(
-  steam
-  vim
-  jq
-  xclip
-  wget
-  curl
-  python3
-  ca-certificates
-  postgresql
-  net-tools
-  nmap
-  network-manager
-  apt-transport-https
-  openssl
-  samba
-  ttf-mscorefonts-installer
-  docker.io
-  gnupg2
-  software-properties-common
-  ebtables
-  ethtool
-  qbittorrent
-  virtualbox
-  aria2
-  libkf5config-bin
-  openssl
-  ufw
-  kate
-  ffmpeg
-  obs-studio
+###Debian 12 approved###
+### Apt Installs ###
+#echo "blacklist nouveau" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
+#echo "options nouveau modeset=0" | sudo tee -a /etc/modprobe.d/blacklist-nouveau.conf
+sudo update-initramfs -u
+sudo apt-add-repository non-free
+sudo apt install software-properties-common -y
+sudo apt-add-repository contrib non-free -y
+sudo apt update -y
+install=(
+    libpcsclite1
+    pcscd
+    libccid
+    libpcsc-perl
+    pcsc-tools
+    libnss3-tools
+    ffmpeg
+    obs-studio
+    openssl
+    qbittorrent
+    ttf-mscorefonts-installer
+    python3
+    python3-pip
+    vim
+    ethtool
+    net-tools
+    nmap
+    samba
+    gnome-keyring
+    apt-transport-https
+    docker
+    gnupg2
+    ebtables
+    aria2
+    thunderbird
+    ufw
+    timeshift
+    nvidia-driver
+    nfs-common
+    neofetch
+    curl
+    lsb-release
+    unattended-upgrades
 )
-for package in "${installs[@]}"; do
-    if ! dpkg-query -Wf'${db:Status-abbrev}' "$package" 2>/dev/null | grep -q '^i'; then
-        sudo apt install "$package" -y || { echo "Failed to install $package"; exit 1; }
+for p in "${install[@]}"; do
+    if ! dpkg-query -Wf'${db:Status-abbrev}' "$p" 2>/dev/null | grep -q '^i'; then
+        sudo apt install "$p" -y || { echo "Failed to install $p"; exit 1; }
     fi
 done
-
-### Install btop++ ###
-wget -qO btop.tbz https://github.com/aristocratos/btop/releases/latest/download/btop-x86_64-linux-musl.tbz 
-sudo tar xf btop.tbz --strip-components=2 -C /usr/local ./btop/bin/btop
-btop --version
-rm -rf btop.tbz
-
-### Start steam and login ###
-steam &
-cd $HOME
+sudo fc-cache -f -v
+sudo apt install $(check-language-support) -y
+sudo apt remove --purge kwalletmanager
+sudo apt update -y && sudo apt upgrade -y
 
 ### Download and Install DEB Packages ###
 declare -a urls=(
@@ -57,8 +59,10 @@ declare -a urls=(
 "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
 "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
 "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
-"https://torguard.net/downloads/new/torguard-latest-amd64.deb"
+"https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
 "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
+"http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
+"http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
 )
 
 for url in "${urls[@]}"; do
@@ -75,30 +79,104 @@ for url in "${urls[@]}"; do
     rm "$file_name"
 done
 
+steam &
+cd $HOME
+
+### Btop ###
+latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .assets[11].browser_download_url)
+btop_file_name=$(basename "$latest_release_btop")
+wget "$latest_release_btop" -O "$btop_file_name"
+tar -xjf "$btop_file_name"
+cd btop
+./install.sh
+cd $HOME
+rm -r "$btop_file_name"
+
+### Firefox Brower ###
+sudo apt remove firefox-esr -y
+sudo apt purge firefox-esr -y
+sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 2667CA5C
+sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
+cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
+sudo rm ~/ubuntuzilla.gpg
+echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
+sudo apt update -y && sudo apt upgrade -y
+sudo apt install firefox-mozilla-build -y
+
+### CAC ###
+wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/deb_cac_setup.sh && chmod +x deb_cac_setup.sh && sudo ./deb_cac_setup.sh
+
+### Kubernetes ###
+
+
+### Brave Browser ###
+sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+sudo apt update -y && sudo apt install brave-browser -y
+
+### Git ###
+#make git from source
+wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/git-openssl.sh && chmod +x git-openssl.sh && ./git-openssl.sh
+rm git-openssl.sh
+cd $HOME
+mkdir ~/.mycerts
+cd ~/.mycerts
+wget https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_DoD.zip -O unclass-certificates_pkcs7_DoD.zip
+unzip unclass-certificates_pkcs7_DoD.zip
+cd ~/.mycerts/certificates_pkcs7_v5_12_dod
+openssl pkcs7 -print_certs -in certificates_pkcs7_v5_12_dod_pem.p7b -out dod_cert_bundle.pem
+chmod 600 ~/.mycerts/certificates_pkcs7_v5_12_dod/dod_cert_bundle.pem
+cd $HOME
+chmod 700 ~/.mycerts
+# Prompt the user for their name and email
+read -p "Please enter your name: " name
+read -p "Please enter your email: " email
+git config --global user.name "$name"
+git config --global user.email "$email"
+git config --global core.editor "code"
+#git config --global http.sslCAInfo ~/.mycerts/dod_cert_bundle.pem
+git config --global http.sslverify false
+git config --global http.sslverify true
+# Define the path to the Documents directory
+DOCUMENTS_DIR="$HOME/Documents"
+# Go to the Documents directory
+cd "$DOCUMENTS_DIR" || { echo "Failed to switch to the Documents directory"; exit 1; }
+# Check if SSH Key already exists
+if [ ! -f ~/.ssh/github_ssh_key ]; then
+    # 1. Generate SSH Key (without passphrase for automation; you can modify as needed)
+    ssh-keygen -t ed25519 -C "danalexanderbu@gmail.com" -f ~/.ssh/github_ssh_key || { echo "SSH key generation failed"; exit 1; }
+    # 3. Prompt user to manually add the public key to GitHub
+    echo "Please add the following SSH key to your GitHub account:"
+    cat ~/.ssh/github_ssh_key.pub
+    echo "Once you've added it, press any key to continue..."
+    read -n 1 -s
+else
+    echo "SSH key already exists. Skipping generation..."
+fi
+# 2. Start the ssh-agent in the background and add the SSH key
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/github_ssh_key || { echo "Failed to add SSH key to agent"; exit 1; }
+# Update or create SSH config to use the specific key for GitHub
+if [ ! -f ~/.ssh/config ]; then
+    touch ~/.ssh/config
+fi
+echo -e "Host github.com\n  IdentityFile ~/.ssh/github_ssh_key" >> ~/.ssh/config
+# Inform user to continue with cloning
+echo "You can now clone your repositories."
+# Clone the repositories into their respective folders
+git clone git@github.com:danalexanderbu/personal.git personal || { echo "Failed to clone personal"; exit 1; }
+git clone git@github.com:danalexanderbu/My_Repo.git My_Repo || { echo "Failed to clone My_Repo"; exit 1; }
+cd $HOME
+
+### Flatpak ###
+sudo apt install flatpak
+sudo apt install plasma-discover-backend-flatpak
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install flathub com.usebottles.bottles -y
+
 ### Battle.net Installation ###
 # Add a non steam game to steam called Battle.net and install it
 wget "https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&gameProgram=BATTLENET_APP" -O "Battle.net-Setup.exe"
-
-### Firefox Installation and Configuration ###
-sudo apt --fix-broken install -y
-sudo snap remove --purge firefox
-sudo apt purge firefox -y
-if ! grep -q "^deb .*mozillateam/ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-  sudo add-apt-repository ppa:mozillateam/ppa -y
-fi
-sudo tee /etc/apt/preferences.d/Mozilla <<EOF
-Package: firefox*
-Pin: release o=LP-PPA-mozillateam
-Pin-Priority: 1001
-EOF
-sudo apt update
-sudo apt install firefox -y
-sudo echo 'Unattended-Upgrade::Allowed-Origins:: "LP-PPA-mozillateam:'$(lsb_release -cs)'";' | sudo tee /etc/apt/apt.conf.d/51unattended-upgrades-firefox
-
-### GitHub Script for CAC Execution ###
-curl -LO "https://github.com/danalexanderbu/My_Repo/raw/536b4fa768aed767abed235ee9f514cb0b747895/bash-projects/cac_setup.sh"
-chmod +x cac_setup.sh
-./cac_setup.sh
 
 ### Proton GE Custom Installation ###
 latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
@@ -121,66 +199,40 @@ else
     rm "$file_name"
 fi
 
-### Microsoft Fonts and Language Support ###
-sudo add-apt-repository multiverse -y
-#deb support needs to be done before ttf
-#sudo apt-add-repository contrib non-free -y
-sudo apt update
-sudo apt upgrade -y
-sudo fc-cache -f -v
-sudo apt install $(check-language-support) -y
-
-### Other Essential Software Installations ###
-sudo apt install gnome-keyring -y
-curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
-echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-sudo apt update
-sudo apt install brave-browser -y
+### Install Obsidian ###
+latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
+wget "$latest_release_url_Obsidian"
+file_name=$(basename "$latest_release_url_Obsidian")
+sudo dpkg -i "$file_name"
+rm "$file_name"
 sudo apt --fix-broken install -y
- 
-### Flatpak and Bottles Installation ###
-sudo apt install flatpak gnome-software-plugin-flatpak -y
-sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak install flathub com.usebottles.bottles -y
 
 ### VirtualBox Installation ###
-# VM Configuration Variables
-#VM_NAME="Windows11_VM"
-#ISO_PATH="Windows11.iso"
-#VM_HDD_PATH="$VM_NAME.vdi"
-#VM_HDD_SIZE="75000"  # 75GB
-#VM_RAM="4096"        # 4GB
-#VM_VRAM="128"        # 128MB
-#Download Windows 11 ISO from google drive so it can be used consistently
-#FILE_ID="1WzDO6lPa4zb9mqxNewz6pahopoLTbczz"
-#CONFIRM=$(curl -sc /tmp/gcookie "https://drive.google.com/uc?export=download&id=${FILE_ID}" | grep -o 'confirm=[^&]*' | sed 's/confirm=//')
-#curl -Lb /tmp/gcookie "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILE_ID}" -o Windows11.iso
-# Check if curl was successful and the file has a reasonable size (here, I'm assuming at least 1GB(1B bytes) for the ISO)
-#if [ $? -ne 0 ] || [ $(stat -c %s "$ISO_PATH") -lt 1000000000 ]; then
-#    echo "Error: Windows 11 ISO download failed or file is incomplete. Exiting."
-#    exit 1
-#fi
-# Create the VM in VirtualBox
-#VBoxManage createvm --name $VM_NAME --ostype "Windows10_64" --register
-# Set VM resources
-#VBoxManage modifyvm $VM_NAME --memory $VM_RAM --vram $VM_VRAM
-# Create virtual hard drive for the VM
-#VBoxManage createhd --filename $VM_HDD_PATH --size $VM_HDD_SIZE
-# Attach HDD to the VM
-#VBoxManage storagectl $VM_NAME --name "SATA Controller" --add sata --controller IntelAhci
-#VBoxManage storageattach $VM_NAME --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium $VM_HDD_PATH
-# Attach ISO (Windows 11 installation media) to the VM
-#VBoxManage storagectl $VM_NAME --name "IDE Controller" --add ide
-#VBoxManage storageattach $VM_NAME --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium $ISO_PATH
-# Set up Bridged Networking for VM
-#VBoxManage modifyvm $VM_NAME --nic1 bridged --bridgeadapter1 "$(VBoxManage list bridgedifs | head -n 1 | cut -d ':' -f 2 | xargs)"
-# Start the VM (Optional - Uncomment if you want to automatically start the VM after creation)
-#VBoxManage startvm $VM_NAME
-#echo "VM created and ISO attached. You can now start the VM from VirtualBox."
+# Add the Oracle VBox 2016 public key
+curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/vbox.gpg
+# Add the Oracle VBox public key
+curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/oracle_vbox.gpg
+# Add the VirtualBox repository to the system's APT source list
+# "$(lsb_release -cs)" dynamically gets the codename of your Debian distribution.
+echo "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
+# Update the local package index to include the new VirtualBox repository
+sudo apt update
+# Install the Linux headers and dkms for the current running kernel
+sudo apt install linux-headers-$(uname -r) dkms -y
+# Install VirtualBox version 7.0
+sudo apt install virtualbox-7.0 -y
+# Add the current user to the vboxusers group to grant permission to access the vboxdrv kernel module
+sudo usermod -aG vboxusers $USER
+# Change the user’s group to vboxusers for the current session
+newgrp vboxusers
+# Download the Oracle VM VirtualBox Extension Pack
+wget https://download.virtualbox.org/virtualbox/7.0.10/Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
+# Install the Oracle VM VirtualBox Extension Pack
+sudo vboxmanage extpack install Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
+# Remove the downloaded Oracle VM VirtualBox Extension Pack
+rm Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
 
-### Install python packages ###\
-#Pip3 expects each package to be space-separated, not comma-separated.
-sudo apt install python3-pip -y
+### Python Packages ###
 packages=(
 aiohttp
 aiosignal
@@ -238,35 +290,36 @@ xlwt
 yarl
 )
 #more effecient way to install python packages than for loop
-pip3 install ${packages[@]}
+pip3 install "${packages[@]}" --break-system-packages
 
+### Configure UFW ###
 sudo ufw enable
-
-### Configure Dropbox ###
-# Download the latest version of Dropbox and save it as dropbox.tar.gz
-wget -O "$HOME/dropbox.tar.gz" "https://www.dropbox.com/download?plat=lnx.x86_64"
-# Extract the contents of the archive to ~/.dropbox-dist
-tar -xvzf "$HOME/dropbox.tar.gz" -C "$HOME"
-# Start the daemon
-# Note: This will create a symbolic link to the daemon in ~/.dropbox-dist
-# Make the daemon executable
-if [ ! -x "$HOME/.dropbox-dist/dropboxd" ]; then
-    chmod +x "$HOME/.dropbox-dist/dropboxd"
-else
-    echo "Dropbox daemon already executable. Skipping..."
-fi
-# Check if Dropbox is running before killing it
-if pgrep dropbox > /dev/null; then
-    pkill dropbox
-fi
-cd $HOME
+#Allow internet
+sudo ufw allow 80
+sudo ufw allow 443
+#Allow Git
+sudo ufw allow 22
+sudo ufw allow 9418
+#Allow unraid
+sudo ufw allow from 192.168.1.133 to any port 80
+sudo ufw allow from 192.168.1.133 to any port 443
+sudo ufw allow from 192.168.1.133 to any port 137:139
+sudo ufw allow from 192.168.1.133 to any port 445
+#Allow steam
+sudo ufw allow 27000:27050/udp
+sudo ufw allow 27000:27050/tcp
+sudo ufw allow 27015:27030/udp
+sudo ufw allow 27036:27037/tcp
+sudo ufw allow 27031:27036/udp
+sudo ufw allow 4380/udp
+sudo ufw restart
 
 ### Configure .bashrc ###
 # Backup the existing .bashrc
 cp ~/.bashrc ~/.bashrc_backup
 # Append the new content to .bashrc using tee
-cat << 'EOF' | tee -a ~/.bashrc > /dev/null
 ### My custom .bashrc file ###
+cat << 'EOF' | tee -a ~/.bashrc > /dev/null
 # Don't put duplicate lines in the history and do not add lines that start with a space
 export HISTCONTROL=erasedups:ignoredups:ignorespace
 
@@ -278,8 +331,6 @@ export LESS_TERMCAP_se=$'\E[0m'
 export LESS_TERMCAP_so=$'\E[01;44;33m'
 export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[01;32m'
-
-export JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64
 
 #My custom aliases
 alias uu="sudo apt update && sudo apt upgrade"
@@ -471,5 +522,210 @@ echo "192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0" | sudo tee -a
 echo "192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0" | sudo tee -a /etc/fstab
 echo "192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
 
-echo "All tasks completed successfully. Starting Kubernetes and Git installation..."
-wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/git-n-kube.sh && chmod +x git-n-kube.sh && ./git-n-kube.sh
+### Automate Security Updates ###
+#echo 'Unattended-Upgrade::Allowed-Origins {' | sudo tee /etc/apt/apt.conf.d/50unattended-upgrades
+#echo '        "${distro_id}:${distro_codename}-security";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+#echo '//      "${distro_id}:${distro_codename}-updates";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+#echo '};' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+#echo 'APT::Periodic::Update-Package-Lists "1";' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades
+#echo 'APT::Periodic::Download-Upgradeable-Packages "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+#echo 'APT::Periodic::AutocleanInterval "7";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+#echo 'APT::Periodic::Unattended-Upgrade "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+
+
+### Configure Theme ###
+cd $HOME/Documents/
+# Clone the Layan-kde repository from GitHub to the current directory (Documents)
+git clone https://github.com/vinceliuice/Layan-kde.git
+cd Layan-kde
+./install.sh
+cd $HOME/Documents/
+# Clone the Tela-icon-theme repository from GitHub to the current directory (Documents) 
+git clone https://github.com/vinceliuice/Tela-icon-theme.git
+cd Tela-icon-theme
+# Install the Tela icon theme 
+./install.sh
+cd $HOME
+
+### Custome keybindings ###
+# Create the custom keybindings file
+mkdir -p ~/.keybindings
+tee ~/.keybindings/custom.keybindings <<EOF
+[Data]
+DataCount=1
+
+[Data_1]
+Comment=Comment
+DataCount=6
+Enabled=true
+Name=Custom-launches
+SystemGroup=0
+Type=ACTION_DATA_GROUP
+
+[Data_1Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_1]
+Comment=launches firefox
+Enabled=true
+Name=firefox
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_1Actions]
+ActionsCount=1
+
+[Data_1_1Actions0]
+CommandURL=firefox
+Type=COMMAND_URL
+
+[Data_1_1Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_1Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_1Triggers0]
+Key=Ctrl+Alt+F
+Type=SHORTCUT
+Uuid={0cf7902b-6d51-483d-b656-7fdb427ee224}
+
+[Data_1_2]
+Comment=launches brave browser
+Enabled=true
+Name=brave
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_2Actions]
+ActionsCount=1
+
+[Data_1_2Actions0]
+CommandURL=brave-browser
+Type=COMMAND_URL
+
+[Data_1_2Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_2Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_2Triggers0]
+Key=Ctrl+Alt+B
+Type=SHORTCUT
+Uuid={743534d6-ed1e-43ad-a1ef-8c449dba2594}
+
+[Data_1_3]
+Comment=launches google chrome
+Enabled=true
+Name=google
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_3Actions]
+ActionsCount=1
+
+[Data_1_3Actions0]
+CommandURL=google-chrome
+Type=COMMAND_URL
+
+[Data_1_3Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_3Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_3Triggers0]
+Key=Ctrl+Alt+G
+Type=SHORTCUT
+Uuid={57805a1d-97b5-4458-b94b-0249cb9b4fc2}
+
+[Data_1_4]
+Comment=brave incognito
+Enabled=true
+Name=brave-incognito
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_4Actions]
+ActionsCount=1
+
+[Data_1_4Actions0]
+CommandURL=brave-browser -incognito
+Type=COMMAND_URL
+
+[Data_1_4Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_4Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_4Triggers0]
+Key=Ctrl+Alt+I
+Type=SHORTCUT
+Uuid={effa10da-83a8-45ae-8da0-3ac20b5ed258}
+
+[Data_1_5]
+Comment=launches vscode
+Enabled=true
+Name=vscode
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_5Actions]
+ActionsCount=1
+
+[Data_1_5Actions0]
+CommandURL=code
+Type=COMMAND_URL
+
+[Data_1_5Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_5Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_5Triggers0]
+Key=Ctrl+Alt+V
+Type=SHORTCUT
+Uuid={ecc50121-e337-4738-b7ba-3f381f521d76}
+
+[Data_1_6]
+Comment=launches kate
+Enabled=true
+Name=kate
+Type=SIMPLE_ACTION_DATA
+
+[Data_1_6Actions]
+ActionsCount=1
+
+[Data_1_6Actions0]
+CommandURL=kate
+Type=COMMAND_URL
+
+[Data_1_6Conditions]
+Comment=
+ConditionsCount=0
+
+[Data_1_6Triggers]
+Comment=Simple_action
+TriggersCount=1
+
+[Data_1_6Triggers0]
+Key=Ctrl+Alt+K
+Type=SHORTCUT
+Uuid={c36dfafa-11aa-4311-a19e-fcd2aa07d79f}
+
+[Main]
+AllowMerge=true
+ImportId=69
+Version=2
+EOF
+
+echo "All tasks completed successfully."

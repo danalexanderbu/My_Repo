@@ -36,7 +36,6 @@ install=(
     thunderbird
     ufw
     timeshift
-    nvidia-driver
     nfs-common
     neofetch
     curl
@@ -55,14 +54,11 @@ sudo apt update -y && sudo apt upgrade -y
 
 ### Download and Install DEB Packages ###
 declare -a urls=(
-"https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
 "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
 "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
 "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
-"https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
 "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
 "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
-"http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
 )
 
 for url in "${urls[@]}"; do
@@ -174,31 +170,6 @@ sudo apt install plasma-discover-backend-flatpak
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub com.usebottles.bottles -y
 
-### Battle.net Installation ###
-# Add a non steam game to steam called Battle.net and install it
-wget "https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&gameProgram=BATTLENET_APP" -O "Battle.net-Setup.exe"
-
-### Proton GE Custom Installation ###
-latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
-file_name=$(basename "$latest_release_url_GE")
-wget "$latest_release_url_GE" -O "$file_name"
-folder_name=$(basename "$file_name" .tar.gz)
-# Check if the latest GE folder is already there
-if [ -d "$HOME/.steam/steam/compatibilitytools.d/$folder_name" ]; then
-    echo "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file."
-    rm "$file_name"
-else
-    tar -xzvf "$file_name"
-    
-    # Create directory if it doesn't exist
-    if [ ! -d "$HOME/.steam/steam/compatibilitytools.d" ]; then
-        mkdir "$HOME/.steam/steam/compatibilitytools.d"
-    fi
-    
-    mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
-    rm "$file_name"
-fi
-
 ### Install Obsidian ###
 latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
 wget "$latest_release_url_Obsidian"
@@ -234,12 +205,6 @@ rm Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
 
 ### Python Packages ###
 packages=(
-aiohttp
-aiosignal
-alpha-vantage
-api
-async-generator
-async-timeout
 attrs
 beautifulsoup4
 certifi
@@ -300,19 +265,7 @@ sudo ufw allow 443
 #Allow Git
 sudo ufw allow 22
 sudo ufw allow 9418
-#Allow unraid
-sudo ufw allow from 192.168.1.133 to any port 80
-sudo ufw allow from 192.168.1.133 to any port 443
-sudo ufw allow from 192.168.1.133 to any port 137:139
-sudo ufw allow from 192.168.1.133 to any port 445
-#Allow steam
-sudo ufw allow 27000:27050/udp
-sudo ufw allow 27000:27050/tcp
-sudo ufw allow 27015:27030/udp
-sudo ufw allow 27036:27037/tcp
-sudo ufw allow 27031:27036/udp
-sudo ufw allow 4380/udp
-sudo ufw restart
+
 
 ### Configure .bashrc ###
 # Backup the existing .bashrc
@@ -512,25 +465,15 @@ cpp()
 EOF
 source ~/.bashrc
 
-### Configure fstab ###
-# Create the mount points
-sudo mkdir /mnt/Movies
-sudo mkdir /mnt/TV
-sudo mkdir /mnt/Disney\ Movies
-# Add the mount points to fstab
-echo "192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
-echo "192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0" | sudo tee -a /etc/fstab
-echo "192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
-
 ### Automate Security Updates ###
-#echo 'Unattended-Upgrade::Allowed-Origins {' | sudo tee /etc/apt/apt.conf.d/50unattended-upgrades
-#echo '        "${distro_id}:${distro_codename}-security";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-#echo '//      "${distro_id}:${distro_codename}-updates";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-#echo '};' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-#echo 'APT::Periodic::Update-Package-Lists "1";' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades
-#echo 'APT::Periodic::Download-Upgradeable-Packages "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
-#echo 'APT::Periodic::AutocleanInterval "7";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
-#echo 'APT::Periodic::Unattended-Upgrade "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+echo 'Unattended-Upgrade::Allowed-Origins {' | sudo tee /etc/apt/apt.conf.d/50unattended-upgrades
+echo '        "${distro_id}:${distro_codename}-security";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+echo '//      "${distro_id}:${distro_codename}-updates";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+echo '};' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
+echo 'APT::Periodic::Update-Package-Lists "1";' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades
+echo 'APT::Periodic::Download-Upgradeable-Packages "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+echo 'APT::Periodic::AutocleanInterval "7";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+echo 'APT::Periodic::Unattended-Upgrade "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
 
 
 ### Configure Theme ###
