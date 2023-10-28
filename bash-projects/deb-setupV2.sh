@@ -230,7 +230,7 @@ function install_virtualbox () {
     echo "Please log out and log back in to apply the group changes."
 }
 
-function instal_python_packages () {
+function install_python_packages () {
     for cmd in python3 pip3; do
         if ! command -v $cmd &> /dev/null; then
             echo "$cmd could not be found. Please install it and try again."
@@ -784,6 +784,10 @@ function enable_UFW () {
     sudo ufw allow 4380/udp
     sudo ufw restart
 }
+#error handling when a function fails
+function_status () {
+    $1 && echo "$1 completed successfully." || echo "Error executing $1."
+}
 
 echo "Select which sections to install:"
 echo "1. APT Installs"
@@ -810,24 +814,38 @@ read -a choices
 
 for choice in "${choices[@]}"; do
     case $choice in
-        1) apt_installs;;
-        2) download_and_install_deb;;
-        3) install_btop;;
-        4) install_firefox;;
-        5) update_firefox;;
-        6) install_cac;;
-        7) install_brave;;
-        8) install_flatpak_and_bottles;;
-        9) install_protonGE;;
-        10) install_obsidian;;
-        11) install_virtualbox;;
-        12) instal_python_packages;;
-        13) install_git;;
-        14) install_theme;;
-        15) configure_bashrc;;
-        16) configure_hotkeys;;
-        17) enable_UFW;;
-        18) apt_installs && download_and_install_deb && install_btop && install_cac && install_brave && install_flatpak_and_bottles && install_protonGE && install_obsidian && instal_python_packages && install_git && install_theme && configure_bashrc && configure_hotkeys && enable_UFW && install_virtualbox;;
+        1) function_status apt_installs;;
+        2) function_status download_and_install_deb;;
+        3) function_status install_btop;;
+        4) function_status install_firefox;;
+        5) function_status update_firefox;;
+        6) function_status install_cac;;
+        7) function_status install_brave;;
+        8) function_status install_flatpak_and_bottles;;
+        9) function_status install_protonGE;;
+        10) function_status install_obsidian;;
+        11) function_status install_virtualbox;;
+        12) function_status install_python_packages;;
+        13) function_status install_git;;
+        14) function_status install_theme;;
+        15) function_status configure_bashrc;;
+        16) function_status configure_hotkeys;;
+        17) function_status enable_UFW;;
+        18) function_status apt_installs &&
+            function_status download_and_install_deb &&
+            function_status install_btop &&
+            function_status install_cac &&
+            function_status install_brave &&
+            function_status install_flatpak_and_bottles &&
+            function_status install_protonGE &&
+            function_status install_obsidian &&
+            function_status instal_python_packages &&
+            function_status install_git &&
+            function_status install_theme &&
+            function_status configure_bashrc &&
+            function_status configure_hotkeys &&
+            function_status enable_UFW &&
+            function_status install_virtualbox;;
         19) exit 0;;
         *) echo "Invalid option: $choice";;
     esac
