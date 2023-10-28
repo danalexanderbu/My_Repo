@@ -79,7 +79,7 @@ function download_and_install_deb() {
         echo "Successfully downloaded $file_name"
 
         # Install the .deb package
-        sudo dpkg -i "$file_name" || sudo apt --fix-broken install -y
+        sudo dpkg -i "$file_name" && sudo apt --fix-broken install -y
         echo "Successfully installed $file_name"
         
         # Remove the downloaded .deb package
