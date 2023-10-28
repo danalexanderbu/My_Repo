@@ -57,11 +57,14 @@ function apt_installs() {
 function download_and_install_deb() {
     cd $HOME/Downloads
     declare -a urls=(
+    "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
     "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
     "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
     "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
+    "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
     "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
     "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
+    "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
     )
 
     for url in "${urls[@]}"; do
@@ -138,6 +141,12 @@ function install_flatpak_and_bottles () {
 }
 
 function install_protonGE () {
+    for cmd in curl jq steam; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "$cmd could not be found. Please install it and try again."
+            return 1
+        fi
+    done
     latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
     file_name=$(basename "$latest_release_url_GE")
     wget "$latest_release_url_GE" -O "$file_name"
@@ -160,6 +169,12 @@ function install_protonGE () {
 }
 
 function install_obsidian () {
+    for cmd in curl jq; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "$cmd could not be found. Please install it and try again."
+            return 1
+        fi
+    done
     latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
     wget "$latest_release_url_Obsidian"
     file_name=$(basename "$latest_release_url_Obsidian")
@@ -169,6 +184,12 @@ function install_obsidian () {
 }
 
 function install_virtualbox () {
+    for cmd in curl; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "$cmd could not be found. Please install it and try again."
+            return 1
+        fi
+    done
     cd $HOME/Downloads
     # Add the Oracle VBox 2016 public key
     if dpkg -l | grep virtualbox > /dev/null; then
@@ -205,6 +226,12 @@ function install_virtualbox () {
 }
 
 function instal_python_packages () {
+    for cmd in python3 pip3; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "$cmd could not be found. Please install it and try again."
+            return 1
+        fi
+    done
     packages=(
     aiohttp
     aiosignal
@@ -321,6 +348,12 @@ function install_git () {
 }
 
 function install_theme () {
+    for cmd in git; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "$cmd could not be found. Please install it and try again."
+            return 1
+        fi
+    done
     cd $HOME/Documents/
     # Clone the Layan-kde repository from GitHub to the current directory (Documents)
     git clone https://github.com/vinceliuice/Layan-kde.git
@@ -719,6 +752,12 @@ EOF
 }
 
 function enable_UFW () {
+    for cmd in ufw; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "$cmd could not be found. Please install it and try again."
+            return 1
+        fi
+    done
     sudo ufw enable
     #Allow internet
     sudo ufw allow 80
