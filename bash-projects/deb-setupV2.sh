@@ -1,5 +1,10 @@
 #!/bin/bash
-
+#Intended to give the user a choice of what to install on a fresh debian install or to update an existing install
+#This script has some parts intended for root and some for the user
+#The apt_installs function is intended to be run as root and can be updated to include more packages
+#The update_firefox function is intended to be run as root as Debian does not allow the user to update firefox automatically
+#This has been tested on Debian 12 (Bookworm)
+#If you have a problem with CAC setup try opening firefox and chrome and then rerunning the script
 function apt_installs() {
     #uncomment if laptop
     #echo "blacklist nouveau" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
@@ -822,7 +827,7 @@ for choice in "${choices[@]}"; do
         15) configure_bashrc;;
         16) configure_hotkeys;;
         17) enable_UFW;;
-        18) apt_installs && download_and_install_deb && install_btop && install_cac && install_brave && install_flatpak_and_bottles && install_protonGE && install_obsidian && install_virtualbox && instal_python_packages && install_git && install_theme && configure_bashrc && configure_hotkeys && enable_UFW;;
+        18) apt_installs && download_and_install_deb && install_btop && install_cac && install_brave && install_flatpak_and_bottles && install_protonGE && install_obsidian && instal_python_packages && install_git && install_theme && configure_bashrc && configure_hotkeys && enable_UFW && install_virtualbox;;
         19) exit 0;;
         *) echo "Invalid option: $choice";;
     esac
