@@ -856,7 +856,7 @@ for choice in "${choices[@]}"; do
             function_status enable_UFW
             function_status install_virtualbox;;
         19) exit 0;;
-        *) echo "Invalid option: $choice";; | tee -a $LOGFILE
+        *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
     esac
 done
 
