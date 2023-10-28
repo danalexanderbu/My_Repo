@@ -110,7 +110,11 @@ function update_firefox() {
     URL="https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US"
     wget -O firefox-latest.tar.bz2 "$URL"
     tar xjf firefox-latest.tar.bz2
-    sudo mv /opt/firefox /opt/firefox.bak && sudo mkdir -p /opt/firefox
+    TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+    if [ -d "/opt/firefox" ]; then
+        sudo mv /opt/firefox /opt/firefox.bak.$TIMESTAMP
+    fi
+    sudo mkdir -p /opt/firefox
     sudo cp -r $HOME/Downloads/firefox/* /opt/firefox
     rm -rf $HOME/Downloads/firefox-latest.tar.bz2 $HOME/Downloads/firefox
 }
