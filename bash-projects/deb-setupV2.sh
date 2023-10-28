@@ -842,8 +842,8 @@ for choice in "${choices[@]}"; do
         18) function_status apt_installs
             function_status download_and_install_deb
             function_status install_btop
-            function_status install_cac
             function_status install_brave
+            function_status install_firefox
             function_status install_flatpak_and_bottles
             function_status install_protonGE
             function_status install_obsidian
@@ -852,6 +852,7 @@ for choice in "${choices[@]}"; do
             function_status install_theme
             function_status configure_bashrc
             function_status configure_hotkeys
+            function_status install_cac
             function_status enable_UFW
             function_status install_virtualbox;;
         19) exit 0;;
