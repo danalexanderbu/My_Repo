@@ -97,7 +97,7 @@ function install_btop() {
     tar -xjf "$btop_file_name"
     cd btop
     ./install.sh
-    cd $HOME
+    cd $HOME/Downloads
     rm -r "$btop_file_name"
 }
 
