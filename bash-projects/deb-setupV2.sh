@@ -757,6 +757,7 @@ echo "16. Configure Hotkeys"
 echo "17. Enable UFW"
 echo "18. All except Firefox"
 echo "19. Update firefox"
+echo "20. Cancel"
 echo -n "Enter your choice (e.g., 1 2 3): "
 read -a choices
 
@@ -781,6 +782,7 @@ for choice in "${choices[@]}"; do
         17) enable_UFW;;
         18) apt_installs && download_and_install_deb && install_btop && install_cac && install_brave && install_flatpak_and_bottles && install_protonGE && install_obsidian && install_virtualbox && instal_python_packages && install_git && install_theme && configure_bashrc && configure_hotkeys && enable_UFW;;
         19) update_firefox;;
+        20) exit 0;;
         *) echo "Invalid option: $choice";;
     esac
 done
