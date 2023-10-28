@@ -373,6 +373,8 @@ function install_theme () {
     git clone https://github.com/ryanoasis/nerd-fonts.git
     cd nerd-fonts
     ./install.sh
+    # update font cache
+    sudo fc-cache -f -v
     cd $HOME
 }
 
@@ -845,10 +847,10 @@ for choice in "${choices[@]}"; do
             function_status install_brave
             function_status install_firefox
             function_status install_flatpak_and_bottles
-            function_status install_protonGE
             function_status install_obsidian
             function_status instal_python_packages
             function_status install_git
+            function_status install_protonGE
             function_status install_theme
             function_status configure_bashrc
             function_status configure_hotkeys
