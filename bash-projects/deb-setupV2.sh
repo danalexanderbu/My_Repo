@@ -798,7 +798,7 @@ echo "14. Install Theme"
 echo "15. Configure Bashrc"
 echo "16. Configure Hotkeys"
 echo "17. Enable UFW"
-echo "18. All except Firefox"
+echo "18. All except Updating Firefox"
 echo "19. Cancel"
 echo -n "Enter your choice (e.g., 1 2 3): "
 read -a choices
