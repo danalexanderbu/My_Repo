@@ -785,31 +785,39 @@ function enable_UFW () {
     sudo ufw restart
 }
 #error handling when a function fails
-function_status () {
-    $1 && echo "$1 completed successfully." || echo "Error executing $1."
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOGFILE="install_log_${TIMESTAMP}.txt"
+ERRORFILE="errors_${TIMESTAMP}.txt"
+function function_status() {
+    if $1; then
+        echo "$1 completed successfully." | tee -a $LOGFILE
+    else
+        echo "Error executing $1." | tee -a $LOGFILE
+        return 1
+    fi
 }
 
-echo "Select which sections to install:"
-echo "1. APT Installs"
-echo "2. Download and Install DEB Packages"
-echo "3. Install Btop"
-echo "4. Install Firefox Browser"
-echo "5. Update Firefox"
-echo "6. Install CAC"
-echo "7. Install Brave Browser"
-echo "8. Install Flatpak and Bottles"
-echo "9. Install Proton GE"
-echo "10. Install Obsidian"
-echo "11. Install VirtualBox"
-echo "12. Install Python Packages"
-echo "13. Install Git"
-echo "14. Install Theme"
-echo "15. Configure Bashrc"
-echo "16. Configure Hotkeys"
-echo "17. Enable UFW"
-echo "18. All except Updating Firefox"
-echo "19. Cancel"
-echo -n "Enter your choice (e.g., 1 2 3): "
+echo "Select which sections to install:"  | tee -a $LOGFILE
+echo "1. APT Installs" | tee -a $LOGFILE
+echo "2. Download and Install DEB Packages" | tee -a $LOGFILE
+echo "3. Install Btop" | tee -a $LOGFILE
+echo "4. Install Firefox Browser" | tee -a $LOGFILE
+echo "5. Update Firefox" | tee -a $LOGFILE
+echo "6. Install CAC" | tee -a $LOGFILE
+echo "7. Install Brave Browser" | tee -a $LOGFILE
+echo "8. Install Flatpak and Bottles" | tee -a $LOGFILE
+echo "9. Install Proton GE" | tee -a $LOGFILE
+echo "10. Install Obsidian" | tee -a $LOGFILE
+echo "11. Install VirtualBox" | tee -a $LOGFILE
+echo "12. Install Python Packages" | tee -a $LOGFILE
+echo "13. Install Git" | tee -a $LOGFILE
+echo "14. Install Theme" | tee -a $LOGFILE
+echo "15. Configure Bashrc" | tee -a $LOGFILE
+echo "16. Configure Hotkeys" | tee -a $LOGFILE
+echo "17. Enable UFW" | tee -a $LOGFILE
+echo "18. All except Updating Firefox" | tee -a $LOGFILE
+echo "19. Cancel" | tee -a $LOGFILE
+echo -n "Enter your choice (e.g., 1 2 3): " | tee -a $LOGFILE
 read -a choices
 
 for choice in "${choices[@]}"; do
@@ -831,22 +839,24 @@ for choice in "${choices[@]}"; do
         15) function_status configure_bashrc;;
         16) function_status configure_hotkeys;;
         17) function_status enable_UFW;;
-        18) function_status apt_installs &&
-            function_status download_and_install_deb &&
-            function_status install_btop &&
-            function_status install_cac &&
-            function_status install_brave &&
-            function_status install_flatpak_and_bottles &&
-            function_status install_protonGE &&
-            function_status install_obsidian &&
-            function_status instal_python_packages &&
-            function_status install_git &&
-            function_status install_theme &&
-            function_status configure_bashrc &&
-            function_status configure_hotkeys &&
-            function_status enable_UFW &&
+        18) function_status apt_installs
+            function_status download_and_install_deb
+            function_status install_btop
+            function_status install_cac
+            function_status install_brave
+            function_status install_flatpak_and_bottles
+            function_status install_protonGE
+            function_status install_obsidian
+            function_status instal_python_packages
+            function_status install_git
+            function_status install_theme
+            function_status configure_bashrc
+            function_status configure_hotkeys
+            function_status enable_UFW
             function_status install_virtualbox;;
         19) exit 0;;
-        *) echo "Invalid option: $choice";;
+        *) echo "Invalid option: $choice";; | tee -a $LOGFILE
     esac
 done
+
+awk '/Error executing/ {print $0}' $LOGFILE > $ERRORFILE
