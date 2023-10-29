@@ -843,20 +843,20 @@ for choice in "${choices[@]}"; do
         16) function_status configure_hotkeys;;
         17) function_status enable_UFW;;
         18) function_status apt_installs
-            function_status download_and_install_deb
-            function_status install_btop
-            function_status install_brave
-            function_status install_firefox
-            function_status install_flatpak_and_bottles
-            function_status install_obsidian
-            function_status instal_python_packages
-            function_status install_git
-            function_status install_protonGE
-            function_status install_theme
-            function_status configure_bashrc
-            function_status configure_hotkeys
-            function_status install_cac
-            function_status enable_UFW
+            function_status download_and_install_deb;
+            function_status install_btop;
+            function_status install_brave;
+            function_status install_firefox;
+            function_status install_flatpak_and_bottles;
+            function_status install_obsidian;
+            function_status instal_python_packages;
+            function_status install_git;
+            function_status install_protonGE;
+            function_status install_theme;
+            function_status configure_bashrc;
+            function_status configure_hotkeys;
+            function_status install_cac;
+            function_status enable_UFW;
             function_status install_virtualbox;;
         19) exit 0;;
         *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
