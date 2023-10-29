@@ -85,6 +85,7 @@ function download_and_install_deb() {
         # Remove the downloaded .deb package
         rm "$file_name"
     done
+    sudo apt update -y && sudo apt upgrade -y
     steam &
     cd $HOME
 }
