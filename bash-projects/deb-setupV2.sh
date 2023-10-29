@@ -760,12 +760,6 @@ EOF
 }
 
 function enable_UFW () {
-    for cmd in ufw; do
-        if ! command -v $cmd &> /dev/null; then
-            echo "$cmd could not be found. Please install it and try again."
-            return 1
-        fi
-    done
     sudo ufw enable
     #Allow internet
     sudo ufw allow 80
