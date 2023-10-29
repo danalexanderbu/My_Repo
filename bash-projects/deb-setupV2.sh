@@ -55,7 +55,7 @@ function apt_installs() {
     done
     sudo fc-cache -f -v
     sudo apt install $(check-language-support) -y
-    sudo apt remove --purge kwalletmanager packagekit packagekit-tools plasma-discover plasma-discover-snap-backend -y
+    sudo apt remove --purge kwalletmanager  plasma-discover plasma-discover-snap-backend -y
     sudo apt update -y && sudo apt upgrade -y
 }
 
