@@ -770,7 +770,7 @@ function enable_UFW () {
     #Allow unraid
     sudo ufw allow from 192.168.1.133 to any port 80
     sudo ufw allow from 192.168.1.133 to any port 443
-    sudo ufw allow from 192.168.1.133 to any port 137:139
+    sudo ufw allow from 192.168.1.133 to any port 137
     sudo ufw allow from 192.168.1.133 to any port 445
     #Allow steam
     sudo ufw allow 27000:27050/udp
@@ -779,7 +779,7 @@ function enable_UFW () {
     sudo ufw allow 27036:27037/tcp
     sudo ufw allow 27031:27036/udp
     sudo ufw allow 4380/udp
-    sudo ufw restart
+    sudo ufw reload
 }
 #error handling when a function fails
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
