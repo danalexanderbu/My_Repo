@@ -39,95 +39,49 @@ function add_repositories() {
 }
 
 function apt_installs() {
-    sudo apt update -y
-    install=(
-        software-properties-common
-        libpcsclite1
-        pcscd
-        libccid
-        libpcsc-perl
-        pcsc-tools
-        libnss3-tools
-        ffmpeg
-        obs-studio
-        openssl
-        qbittorrent
-        ttf-mscorefonts-installer
-        python3
-        python3-pip
-        vim
-        ethtool
-        net-tools
-        nmap
-        samba
-        gnome-keyring
-        apt-transport-https
-        docker
-        gnupg2
-        ebtables
-        aria2
-        thunderbird
-        ufw
-        timeshift
-        nfs-common
-        neofetch
-        curl
-        lsb-release
-        unattended-upgrades
+    declare -a packages=(
+        "libpcsclite1" "PC/SC Lite shared library" ON \
+        "pcscd" "Middleware to access a smart card" ON \
+        "libccid" "PC/SC driver for USB CCID smart card readers" ON \
+        "libpcsc-perl" "Perl bindings for PC/SC" ON \
+        "pcsc-tools" "Tools for testing PC/SC drivers and applications" ON \
+        "libnss3-tools" "Network Security Service tools" ON \
+        "ffmpeg" "Multimedia player, server and encoder" ON \
+        "obs-studio" "Open broadcaster software studio" ON \
+        "openssl" "Secure Sockets Layer toolkit" ON \
+        "qbittorrent" "Free and reliable P2P BitTorrent client" ON \
+        "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" ON \
+        "python3" "Python 3 interpreter" ON \
+        "python3-pip" "Python package installer" ON \
+        "vim" "Vi IMproved - enhanced vi editor" ON \
+        "ethtool" "Utility for controlling network drivers and hardware" ON \
+        "net-tools" "Networking tools" ON \
+        "nmap" "Network exploration tool and security scanner" ON \
+        "samba" "SMB/CIFS file, print, and login server for Unix" ON \
+        "gnome-keyring" "GNOME keyring services" ON \
+        "apt-transport-https" "APT transport for downloading via the HTTPS protocol" ON \
+        "docker" "Container platform tool" ON \
+        "gnupg2" "GNU privacy guard - modern version" ON \
+        "ebtables" "Ethernet bridge frame table administration" ON \
+        "aria2" "High speed download utility" ON \
+        "thunderbird" "Email, news and chat client from Mozilla" ON \
+        "ufw" "Uncomplicated Firewall" ON \
+        "timeshift" "System restore tool for Linux" ON \
+        "nfs-common" "NFS support files common to client and server" ON \
+        "neofetch" "System information tool" ON \
+        "curl" "Command line tool for transferring data with URL syntax" ON \
+        "lsb-release" "Linux Standard Base version reporting utility" ON \
+        "unattended-upgrades" "Automatic installation of security upgrades" ON \
+        "kwalletmanager" "KDE wallet manager" ON \
+        "plasma-discover" "KDE Discover software store" ON \
+        "plasma-discover-snap-backend" "Snap backend for KDE Discover" ON
     )
-    for p in "${install[@]}"; do
-        if ! dpkg-query -Wf'${db:Status-abbrev}' "$p" 2>/dev/null | grep -q '^i'; then
-            sudo apt install "$p" -y || { echo "Failed to install $p"; exit 1; }
-        fi
-    done
-    sudo fc-cache -f -v
-    sudo apt install $(check-language-support) -y
-    sudo apt remove --purge kwalletmanager  plasma-discover plasma-discover-snap-backend -y
-    sudo apt update -y && sudo apt upgrade -y
-}
-
-declare -a packages=(
-    "libpcsclite1" "PC/SC Lite shared library"
-    "pcscd" "Middleware to access a smart card"
-    "libccid" "PC/SC driver for USB CCID smart card readers"
-    "libpcsc-perl" "Perl bindings for PC/SC"
-    "pcsc-tools" "Tools for testing PC/SC drivers and applications"
-    "libnss3-tools" "Network Security Service tools"
-    "ffmpeg" "Multimedia player, server and encoder"
-    "obs-studio" "Open broadcaster software studio"
-    "openssl" "Secure Sockets Layer toolkit"
-    "qbittorrent" "Free and reliable P2P BitTorrent client"
-    "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts"
-    "python3" "Python 3 interpreter"
-    "python3-pip" "Python package installer"
-    "vim" "Vi IMproved - enhanced vi editor"
-    "ethtool" "Utility for controlling network drivers and hardware"
-    "net-tools" "Networking tools"
-    "nmap" "Network exploration tool and security scanner"
-    "samba" "SMB/CIFS file, print, and login server for Unix"
-    "gnome-keyring" "GNOME keyring services"
-    "apt-transport-https" "APT transport for downloading via the HTTPS protocol"
-    "docker" "Container platform tool"
-    "gnupg2" "GNU privacy guard - modern version"
-    "ebtables" "Ethernet bridge frame table administration"
-    "aria2" "High speed download utility"
-    "thunderbird" "Email, news and chat client from Mozilla"
-    "ufw" "Uncomplicated Firewall"
-    "timeshift" "System restore tool for Linux"
-    "nfs-common" "NFS support files common to client and server"
-    "neofetch" "System information tool"
-    "curl" "Command line tool for transferring data with URL syntax"
-    "lsb-release" "Linux Standard Base version reporting utility"
-    "unattended-upgrades" "Automatic installation of security upgrades"
-    "kwalletmanager" "KDE wallet manager"
-    "plasma-discover" "KDE Discover software store"
-    "plasma-discover-snap-backend" "Snap backend for KDE Discover"
-)
 
 # Use whiptail to display the checklist
 selected_packages=$(whiptail --title "Package Installation" --checklist \
 "Select the packages you want to install:" 30 90 20 \
 "${packages[@]}" 3>&1 1>&2 2>&3)
+echo "Selected packages: $selected_packages"
 
 whiptail --title "Notice" --msgbox "After your package selections, the following actions will be taken:\n\n1. Fonts cache will be refreshed using: sudo fc-cache -f -v\n2. Language support packages will be installed.\n3. System will be updated and upgraded." 12 78
 
@@ -155,15 +109,49 @@ if [ $? -eq 0 ] && [ ! -z "$selected_packages" ]; then
     sudo apt install $(check-language-support) -y
     sudo apt update -y && sudo apt upgrade -y
 fi
+}
 
 function remove_packages() {
-    # Use whiptail to display a checklist of installed packages
-    local installed_packages=()
-    local default_selection=("kwalletmanager" "plasma-discover" "plasma-discover-snap-backend")
-    
+    local installed_packages=(
+        "libpcsclite1" "PC/SC Lite shared library" ON \
+        "pcscd" "Middleware to access a smart card" ON \
+        "libccid" "PC/SC driver for USB CCID smart card readers" ON \
+        "libpcsc-perl" "Perl bindings for PC/SC" ON \
+        "pcsc-tools" "Tools for testing PC/SC drivers and applications" ON \
+        "libnss3-tools" "Network Security Service tools" ON \
+        "ffmpeg" "Multimedia player, server and encoder" ON \
+        "obs-studio" "Open broadcaster software studio" ON \
+        "openssl" "Secure Sockets Layer toolkit" ON \
+        "qbittorrent" "Free and reliable P2P BitTorrent client" ON \
+        "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" ON \
+        "python3" "Python 3 interpreter" ON \
+        "python3-pip" "Python package installer" ON \
+        "vim" "Vi IMproved - enhanced vi editor" ON \
+        "ethtool" "Utility for controlling network drivers and hardware" ON \
+        "net-tools" "Networking tools" ON \
+        "nmap" "Network exploration tool and security scanner" ON \
+        "samba" "SMB/CIFS file, print, and login server for Unix" ON \
+        "gnome-keyring" "GNOME keyring services" ON \
+        "apt-transport-https" "APT transport for downloading via the HTTPS protocol" ON \
+        "docker" "Container platform tool" ON \
+        "gnupg2" "GNU privacy guard - modern version" ON \
+        "ebtables" "Ethernet bridge frame table administration" ON \
+        "aria2" "High speed download utility" ON \
+        "thunderbird" "Email, news and chat client from Mozilla" ON \
+        "ufw" "Uncomplicated Firewall" ON \
+        "timeshift" "System restore tool for Linux" ON \
+        "nfs-common" "NFS support files common to client and server" ON \
+        "neofetch" "System information tool" ON \
+        "curl" "Command line tool for transferring data with URL syntax" ON \
+        "lsb-release" "Linux Standard Base version reporting utility" ON \
+        "unattended-upgrades" "Automatic installation of security upgrades" ON \
+        "kwalletmanager" "KDE wallet manager" ON \
+        "plasma-discover" "KDE Discover software store" ON \
+        "plasma-discover-snap-backend" "Snap backend for KDE Discover" ON
+    )
+       
     for pkg in "${packages[@]}"; do
         if dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
-            # If the package is one of the default selections, mark it as "ON" by default
             if [[ " ${default_selection[@]} " =~ " ${pkg} " ]]; then
                 installed_packages+=("$pkg" "Installed" "ON")
             else
@@ -176,14 +164,21 @@ function remove_packages() {
     "Select the packages you want to remove:" 30 90 20 \
     "${installed_packages[@]}" 3>&1 1>&2 2>&3)
 
-    # If user pressed Cancel, to_remove will be empty
-    if [ $? -eq 0 ] && [ ! -z "$to_remove" ]; then
-        for pkg in $to_remove; do
-            # Remove surrounding quotes from package names
-            pkg=$(echo $pkg | tr -d '"')
-            sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
-        done
-        sudo apt autoremove -y
+    echo "to_remove: $to_remove"  # Add this line for debugging
+
+    if [ $? -eq 0 ]; then
+        if [ -z "$to_remove" ]; then
+            echo "No packages selected for removal"
+        else
+            echo "Removing the following packages: $to_remove"
+            for pkg in $to_remove; do
+                pkg=$(echo $pkg | tr -d '"')
+                sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
+            done
+            sudo apt autoremove -y
+        fi
+    else
+        echo "User canceled the operation"
     fi
 }
 
@@ -974,23 +969,12 @@ while true; do
         "20" "Exit" 3>&1 1>&2 2>&3)
     
     case $choice in
-        1) function_status apt_installs;;
-        2) function_status download_and_install_deb;;
-        3) function_status install_btop;;
-        4) function_status install_firefox;;
-        5) function_status update_firefox;;
-        6) function_status install_cac;;
-        7) function_status install_brave;;
-        8) function_status install_flatpak_and_bottles;;
-        9) function_status install_protonGE;;
-        10) function_status install_obsidian;;
-        11) function_status install_virtualbox;;
-        12) function_status install_python_packages;;
-        13) function_status install_git;;
-        14) function_status install_theme;;
-        15) function_status configure_bashrc;;
-        16) function_status configure_hotkeys;;
-        17) function_status enable_UFW;;
+        1) function_status blacklist_nouveau;;
+        2) function_status add_repositories;;
+        3) function_status apt_installs;;
+        4) function_status remove_packages;;
+        5) function_status download_and_install_deb;;
+        6) function_status install_btop;;
         18) function_status apt_installs
             function_status download_and_install_deb;
             function_status install_btop;
