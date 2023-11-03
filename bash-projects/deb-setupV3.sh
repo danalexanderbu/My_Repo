@@ -1155,8 +1155,7 @@ while true; do
         "16" "Install Theme" \
         "17" "Configure .bashrc" \
         "18" "Enable UFW" \
-        "19" "Install Everything" \
-        "20" "Exit" 3>&1 1>&2 2>&3)
+        "19" "Exit" 3>&1 1>&2 2>&3)
     
     case $choice in
         1) function_status blacklist_nouveau;;
@@ -1177,24 +1176,7 @@ while true; do
         16) function_status install_theme;;
         17) function_status configure_bashrc;;
         18) function_status enable_UFW;;
-        19) function_status blacklist_nouveau;
-            function_status add_repositories;
-            function_status apt_installs;
-            function_status download_and_install_deb;
-            function_status install_btop;
-            function_status install_brave;
-            function_status install_firefox;
-            function_status install_flatpak_and_bottles;
-            function_status install_obsidian;
-            function_status instal_python_packages;
-            function_status install_git;
-            function_status install_theme;
-            function_status configure_bashrc;
-            function_status configure_hotkeys;
-            function_status install_cac;
-            function_status enable_UFW;
-            function_status install_virtualbox;;
-        20) echo "Exiting script."; break;;
+        19) echo "Exiting script."; break;;
         *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
     esac
 done
