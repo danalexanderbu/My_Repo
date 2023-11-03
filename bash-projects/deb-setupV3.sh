@@ -225,7 +225,7 @@ function download_and_install_deb() {
             fi
         done
     done
-    sudo apt update -y && sudo apt upgrade -y
+    sudo apt update -y && sudo apt --fix-broken install && sudo apt upgrade -y
     cd $HOME
 }
 
