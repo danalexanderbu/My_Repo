@@ -264,6 +264,7 @@ function install_btop() {
     else
         whiptail --title "Cancelled" --msgbox "btop installation cancelled." 10 60
     fi
+    sudo apt --fix-broken install -y
 }
 
 function install_firefox() {
@@ -282,6 +283,7 @@ function install_firefox() {
     else
         echo "Installation canceled by user"
     fi
+    sudo apt --fix-broken install -y
 }
 
 function update_firefox() {
@@ -322,6 +324,7 @@ function install_brave () {
     else
         echo "Installation canceled by user"
     fi
+    sudo apt --fix-broken install -y
 }
 
 function install_flatpak_and_bottles () {
@@ -336,6 +339,7 @@ function install_flatpak_and_bottles () {
     else
         echo "Installation canceled by user"
     fi
+    sudo apt --fix-broken install -y
 }
 
 function install_protonGE () {
@@ -397,6 +401,7 @@ function install_obsidian () {
         sudo apt --fix-broken install -y
         whiptail --title "Info" --msgbox "Obsidian has been installed successfully." 8 50
     fi
+    sudo apt --fix-broken install -y
 }
 
 function install_virtualbox () {
@@ -713,6 +718,7 @@ function configure_bashrc () {
     ### My custom .bashrc file ###
     cat << 'EOF' | tee -a ~/.bashrc > /dev/null
     # Don't put duplicate lines in the history and do not add lines that start with a space
+    alias'BROWSER=w3m'='w3m'
     export HISTCONTROL=erasedups:ignoredups:ignorespace
 
     # Color for manpages in less makes manpages a little easier to read
@@ -1182,7 +1188,6 @@ while true; do
             function_status install_obsidian;
             function_status instal_python_packages;
             function_status install_git;
-            function_status install_protonGE;
             function_status install_theme;
             function_status configure_bashrc;
             function_status configure_hotkeys;
