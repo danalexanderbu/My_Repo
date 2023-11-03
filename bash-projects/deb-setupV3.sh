@@ -268,7 +268,7 @@ function install_btop() {
 
 function install_firefox() {
     local response
-    response=$(whiptail --title "Install Firefox" --yesno "This will remove the existing Firefox installation. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+    response=$(whiptail --title "Install Firefox" --yesno "This will remove the existing Firefox installation as Firefox-ESR and Snap Firefox are incompatible with CAC use. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
 
     if [ $? -eq 0 ]; then
         sudo apt remove firefox-esr -y && sudo apt purge firefox-esr -y
