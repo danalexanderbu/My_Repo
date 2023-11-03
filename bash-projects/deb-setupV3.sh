@@ -73,9 +73,9 @@ function apt_installs() {
         "curl" "Command line tool for transferring data with URL syntax" ON \
         "lsb-release" "Linux Standard Base version reporting utility" ON \
         "unattended-upgrades" "Automatic installation of security upgrades" ON \
-        "kwalletmanager" "KDE wallet manager" ON \
-        "plasma-discover" "KDE Discover software store" ON \
-        "plasma-discover-snap-backend" "Snap backend for KDE Discover" ON
+        "kwalletmanager" "KDE wallet manager" OFF \
+        "plasma-discover" "KDE Discover software store" OFF \
+        "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF
     )
 
 # Use whiptail to display the checklist
@@ -149,6 +149,11 @@ function remove_packages() {
         "kwalletmanager" "KDE wallet manager" ON \
         "plasma-discover" "KDE Discover software store" ON \
         "plasma-discover-snap-backend" "Snap backend for KDE Discover" ON
+        "brave-browser" "Brave browser" ON \
+        "google-chrome-stable" "Google Chrome" ON \
+        "firefox" "Firefox" ON \
+        "thorium-browser" "Thorium browser" ON \
+        "mullvad-vpn" "Mullvad browser" ON \
     )
        
     for pkg in "${packages[@]}"; do
@@ -313,6 +318,15 @@ function install_mullvad-browser () {
     rm mullvad-vpn_*.deb
     sudo apt --fix-broken install -y
 }
+
+function install_brave-browser () {
+    sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+    echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+    sudo apt update -y && sudo apt install brave-browser -y
+    sudo apt --fix-broken install -y
+}
+
+
 function update_firefox() {
     local response
     response=$(whiptail --title "Update Firefox" --yesno "This will update Firefox to the latest version. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
@@ -338,20 +352,6 @@ function update_firefox() {
 function install_cac () {
     cd $HOME/Downloads
     wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/deb_cac_setup.sh && chmod +x deb_cac_setup.sh && sudo ./deb_cac_setup.sh
-}
-
-function install_brave () {
-    local response
-    response=$(whiptail --title "Install Brave Browser" --yesno "This will install the Brave Browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-
-    if [ $? -eq 0 ]; then
-        sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-        sudo apt update -y && sudo apt install brave-browser -y
-    else
-        echo "Installation canceled by user"
-    fi
-    sudo apt --fix-broken install -y
 }
 
 function install_flatpak_and_bottles () {
@@ -559,7 +559,7 @@ function install_git () {
         return
     fi
 
-    #make git from source
+    #make git from source to enable openssl windows support on linux
     set -eu
     # Gather command line options
     SKIPTESTS=
@@ -745,7 +745,6 @@ function configure_bashrc () {
     ### My custom .bashrc file ###
     cat << 'EOF' | tee -a ~/.bashrc > /dev/null
     # Don't put duplicate lines in the history and do not add lines that start with a space
-    alias'BROWSER=w3m'='w3m'
     export HISTCONTROL=erasedups:ignoredups:ignorespace
 
     # Color for manpages in less makes manpages a little easier to read
@@ -1171,18 +1170,21 @@ while true; do
         "5" "Download and Install .deb" \
         "6" "Install btop" \
         "7" "Install Firefox" \
-        "8" "Update Firefox" \
-        "9" "Install Brave" \
-        "10" "Install Flatpak and Bottles" \
-        "11" "Install ProtonGE" \
-        "12" "Install Obsidian" \
-        "13" "Install VirtualBox" \
-        "14" "Install Python Packages" \
-        "15" "Install Git" \
-        "16" "Install Theme" \
-        "17" "Configure .bashrc" \
-        "18" "Enable UFW" \
-        "19" "Exit" 3>&1 1>&2 2>&3)
+        "8" "Install Brave" \
+        "9" "Install Chrome" \
+        "10" "Install Mullvad" \
+        "11" "Install Thorium" \
+        "12" "Update Firefox" \
+        "13" "Install Flatpak and Bottles" \
+        "14" "Install ProtonGE" \
+        "15" "Install Obsidian" \
+        "16" "Install VirtualBox" \
+        "17" "Install Python Packages" \
+        "18" "Install Git" \
+        "19" "Install Theme" \
+        "20" "Configure .bashrc" \
+        "21" "Enable UFW" \
+        "22" "Exit" 3>&1 1>&2 2>&3)
     
     case $choice in
         1) function_status blacklist_nouveau;;
@@ -1192,19 +1194,21 @@ while true; do
         5) function_status download_and_install_deb;;
         6) function_status install_btop;;
         7) function_status install_firefox;;
-        8) function_status install_thorium;;
-        8) function_status update_firefox;;
-        9) function_status install_brave;;
-        10) function_status install_flatpak_and_bottles;;
-        11) function_status install_protonGE;;
-        12) function_status install_obsidian;;
-        13) function_status install_virtualbox;;
-        14) function_status instal_python_packages;;
-        15) function_status install_git;;
-        16) function_status install_theme;;
-        17) function_status configure_bashrc;;
-        18) function_status enable_UFW;;
-        19) echo "Exiting script."; break;;
+        8) function_status install_brave;;
+        9) function_status install_chrome;;
+        10) function_status install_mullvad;;
+        11) function_status install_thorium;;
+        12) function_status update_firefox;;
+        13) function_status install_flatpak_and_bottles;;
+        14) function_status install_protonGE;;
+        15) function_status install_obsidian;;
+        16) function_status install_virtualbox;;
+        17) function_status instal_python_packages;;
+        18) function_status install_git;;
+        19) function_status install_theme;;
+        20) function_status configure_bashrc;;
+        21) function_status enable_UFW;;
+        22) echo "Exiting script."; break;;
         *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
     esac
 done
