@@ -313,6 +313,8 @@ function install_google-chrome() {
 }
 
 function install_mullvad-browser () {
+    local response
+    response=$(whiptail --title "Install Mullvad" --yesno "This will install Mullvad VPN. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
     wget https://mullvad.net/download/app/deb/latest
     sudo dpkg -i mullvad-vpn_*.deb
     rm mullvad-vpn_*.deb
@@ -320,6 +322,8 @@ function install_mullvad-browser () {
 }
 
 function install_brave-browser () {
+    local response
+    response=$(whiptail --title "Install Brave" --yesno "This will install Brave browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
     sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
     echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
     sudo apt update -y && sudo apt install brave-browser -y
@@ -1193,11 +1197,11 @@ while true; do
         4) function_status remove_packages;;
         5) function_status download_and_install_deb;;
         6) function_status install_btop;;
-        7) function_status install_firefox;;
-        8) function_status install_brave;;
-        9) function_status install_chrome;;
-        10) function_status install_mullvad;;
-        11) function_status install_thorium;;
+        7) function_status install_firefox-browser;;
+        8) function_status install_brave-browser;;
+        9) function_status install_google-chrome;;
+        10) function_status install_mullvad-browser;;
+        11) function_status install_thorium-browser;;
         12) function_status update_firefox;;
         13) function_status install_flatpak_and_bottles;;
         14) function_status install_protonGE;;
@@ -1211,6 +1215,11 @@ while true; do
         22) echo "Exiting script."; break;;
         *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
     esac
+    # Check if the return code is 1 (Cancel button was pressed)
+    if [ $? -eq 1 ]; then
+        echo "Installation canceled by user"
+        return
+    fi
 done
 
 awk '/Error executing/ {print $0}' $LOGFILE > $ERRORFILE
