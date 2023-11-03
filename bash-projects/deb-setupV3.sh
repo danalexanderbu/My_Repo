@@ -114,46 +114,46 @@ fi
 
 function remove_packages() {
     local installed_packages=(
-        "libpcsclite1" "PC/SC Lite shared library" ON \
-        "pcscd" "Middleware to access a smart card" ON \
-        "libccid" "PC/SC driver for USB CCID smart card readers" ON \
-        "libpcsc-perl" "Perl bindings for PC/SC" ON \
-        "pcsc-tools" "Tools for testing PC/SC drivers and applications" ON \
-        "libnss3-tools" "Network Security Service tools" ON \
-        "ffmpeg" "Multimedia player, server and encoder" ON \
-        "obs-studio" "Open broadcaster software studio" ON \
-        "openssl" "Secure Sockets Layer toolkit" ON \
-        "qbittorrent" "Free and reliable P2P BitTorrent client" ON \
-        "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" ON \
-        "python3" "Python 3 interpreter" ON \
-        "python3-pip" "Python package installer" ON \
-        "vim" "Vi IMproved - enhanced vi editor" ON \
-        "ethtool" "Utility for controlling network drivers and hardware" ON \
-        "net-tools" "Networking tools" ON \
-        "nmap" "Network exploration tool and security scanner" ON \
-        "samba" "SMB/CIFS file, print, and login server for Unix" ON \
-        "gnome-keyring" "GNOME keyring services" ON \
-        "apt-transport-https" "APT transport for downloading via the HTTPS protocol" ON \
-        "docker" "Container platform tool" ON \
-        "gnupg2" "GNU privacy guard - modern version" ON \
-        "ebtables" "Ethernet bridge frame table administration" ON \
-        "aria2" "High speed download utility" ON \
-        "thunderbird" "Email, news and chat client from Mozilla" ON \
-        "ufw" "Uncomplicated Firewall" ON \
-        "timeshift" "System restore tool for Linux" ON \
-        "nfs-common" "NFS support files common to client and server" ON \
-        "neofetch" "System information tool" ON \
-        "curl" "Command line tool for transferring data with URL syntax" ON \
-        "lsb-release" "Linux Standard Base version reporting utility" ON \
-        "unattended-upgrades" "Automatic installation of security upgrades" ON \
-        "kwalletmanager" "KDE wallet manager" ON \
-        "plasma-discover" "KDE Discover software store" ON \
-        "plasma-discover-snap-backend" "Snap backend for KDE Discover" ON
-        "brave-browser" "Brave browser" ON \
-        "google-chrome-stable" "Google Chrome" ON \
-        "firefox" "Firefox" ON \
-        "thorium-browser" "Thorium browser" ON \
-        "mullvad-vpn" "Mullvad browser" ON \
+        "libpcsclite1" "PC/SC Lite shared library" OFF \
+        "pcscd" "Middleware to access a smart card" OFF \
+        "libccid" "PC/SC driver for USB CCID smart card readers" OFF \
+        "libpcsc-perl" "Perl bindings for PC/SC" OFF \
+        "pcsc-tools" "Tools for testing PC/SC drivers and applications" OFF \
+        "libnss3-tools" "Network Security Service tools" OFF \
+        "ffmpeg" "Multimedia player, server and encoder" OFF \
+        "obs-studio" "Open broadcaster software studio" OFF \
+        "openssl" "Secure Sockets Layer toolkit" OFF \
+        "qbittorrent" "Free and reliable P2P BitTorrent client" OFF \
+        "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" OFF \
+        "python3" "Python 3 interpreter" OFF \
+        "python3-pip" "Python package installer" OFF \
+        "vim" "Vi IMproved - enhanced vi editor" OFF \
+        "ethtool" "Utility for controlling network drivers and hardware" OFF \
+        "net-tools" "Networking tools" OFF \
+        "nmap" "Network exploration tool and security scanner" OFF
+        "samba" "SMB/CIFS file, print, and login server for Unix" OFF \
+        "gnome-keyring" "GNOME keyring services" OFF \
+        "apt-transport-https" "APT transport for downloading via the HTTPS protocol" OFF \
+        "docker" "Container platform tool" OFF \
+        "gnupg2" "GNU privacy guard - modern version" OFF \
+        "ebtables" "Ethernet bridge frame table administration" OFF \
+        "aria2" "High speed download utility" OFF \
+        "thunderbird" "Email, news and chat client from Mozilla" OFF \
+        "ufw" "Uncomplicated Firewall" OFF \
+        "timeshift" "System restore tool for Linux" OFF \
+        "nfs-common" "NFS support files common to client and server" OFF \
+        "neofetch" "System information tool" OFF \
+        "curl" "Command line tool for transferring data with URL syntax" OFF \
+        "lsb-release" "Linux Standard Base version reporting utility" OFF \
+        "unattended-upgrades" "Automatic installation of security upgrades" OFF \
+        "kwalletmanager" "KDE wallet manager" OFF \
+        "plasma-discover" "KDE Discover software store" OFF \
+        "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF
+        "brave-browser" "Brave browser" OFF \
+        "google-chrome-stable" "Google Chrome" OFF \
+        "firefox" "Firefox" OFF \
+        "thorium-browser" "Thorium browser" OFF \
+        "mullvad-vpn" "Mullvad browser" OFF \
     )
        
     for pkg in "${packages[@]}"; do
@@ -180,12 +180,12 @@ function remove_packages() {
             for pkg in $to_remove; do
                 pkg=$(echo $pkg | tr -d '"')
                 sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
-            done
-            sudo apt autoremove -y
+            done            
         fi
     else
         echo "User canceled the operation"
     fi
+    sudo apt autoremove -y
 }
 
 function download_and_install_deb() {
@@ -305,7 +305,7 @@ function install_thorium-browser() {
 function install_google-chrome() {
     local response
     response=$(whiptail --title "Install Google Chrome" --yesno "This will install Google Chrome. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-
+    cd $HOME/Downloads
     curl https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome-stable_current_amd64.deb
     sudo dpkg -i google-chrome-stable_current_amd64.deb
     rm google-chrome-stable_current_amd64.deb
@@ -315,7 +315,8 @@ function install_google-chrome() {
 function install_mullvad-browser () {
     local response
     response=$(whiptail --title "Install Mullvad" --yesno "This will install Mullvad VPN. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-    wget https://mullvad.net/download/app/deb/latest
+    cd $HOME/Downloads
+    wget https://mullvad.net/download/app/deb/latest -O mullvad-vpn_*.deb
     sudo dpkg -i mullvad-vpn_*.deb
     rm mullvad-vpn_*.deb
     sudo apt --fix-broken install -y
