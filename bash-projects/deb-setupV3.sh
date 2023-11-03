@@ -188,7 +188,6 @@ function download_and_install_deb() {
     declare -a urls=(
     "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
     "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
-    "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
     "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
     "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
     "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
@@ -267,7 +266,7 @@ function install_btop() {
     sudo apt --fix-broken install -y
 }
 
-function install_firefox() {
+function install_firefox-browser() {
     local response
     response=$(whiptail --title "Install Firefox" --yesno "This will remove the existing Firefox installation as Firefox-ESR and Snap Firefox are incompatible with CAC use. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
 
@@ -286,6 +285,34 @@ function install_firefox() {
     sudo apt --fix-broken install -y
 }
 
+function install_thorium-browser() {
+    local response
+    response=$(whiptail --title "Install Thorium" --yesno "This will install Thorium web browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+
+    wget https://dl.thorium.rocks/debian/dists/stable/thorium.list && sudo mv thorium.list /etc/apt/sources.list.d/ && sudo apt update && sudo apt install thorium-browser -y
+    cd $HOME/Downloads
+    sudo dpkg -i thorium-browser_*.deb
+    rm thorium-browser_*.deb
+    cd $HOME
+    sudo apt --fix-broken install -y
+}
+
+function install_google-chrome() {
+    local response
+    response=$(whiptail --title "Install Google Chrome" --yesno "This will install Google Chrome. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+
+    curl https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome-stable_current_amd64.deb
+    sudo dpkg -i google-chrome-stable_current_amd64.deb
+    rm google-chrome-stable_current_amd64.deb
+    sudo apt --fix-broken install -y
+}
+
+function install_mullvad-browser () {
+    wget https://mullvad.net/download/app/deb/latest
+    sudo dpkg -i mullvad-vpn_*.deb
+    rm mullvad-vpn_*.deb
+    sudo apt --fix-broken install -y
+}
 function update_firefox() {
     local response
     response=$(whiptail --title "Update Firefox" --yesno "This will update Firefox to the latest version. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
@@ -1165,6 +1192,7 @@ while true; do
         5) function_status download_and_install_deb;;
         6) function_status install_btop;;
         7) function_status install_firefox;;
+        8) function_status install_thorium;;
         8) function_status update_firefox;;
         9) function_status install_brave;;
         10) function_status install_flatpak_and_bottles;;
