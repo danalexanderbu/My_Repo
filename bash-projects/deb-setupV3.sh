@@ -52,6 +52,7 @@ function apt_installs() {
         "qbittorrent" "Free and reliable P2P BitTorrent client" ON \
         "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" ON \
         "python3" "Python 3 interpreter" ON \
+        "googler" "Google from the terminal" ON \
         "python3-pip" "Python package installer" ON \
         "vim" "Vi IMproved - enhanced vi editor" ON \
         "ethtool" "Utility for controlling network drivers and hardware" ON \
@@ -266,29 +267,43 @@ function install_btop() {
 }
 
 function install_firefox() {
-    sudo apt remove firefox-esr -y && sudo apt purge firefox-esr -y
-    sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 2667CA5C
-    sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
-    cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
-    sudo rm ~/ubuntuzilla.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
-    sudo apt update -y && sudo apt upgrade -y
-    sudo apt install firefox-mozilla-build -y
+    local response
+    response=$(whiptail --title "Install Firefox" --yesno "This will remove the existing Firefox installation. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+
+    if [ $? -eq 0 ]; then
+        sudo apt remove firefox-esr -y && sudo apt purge firefox-esr -y
+        sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 2667CA5C
+        sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
+        cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
+        sudo rm ~/ubuntuzilla.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
+        sudo apt update -y && sudo apt upgrade -y
+        sudo apt install firefox-mozilla-build -y
+    else
+        echo "Installation canceled by user"
+    fi
 }
 
 function update_firefox() {
-    cd $HOME/Downloads
-    pkill firefox || true
-    URL="https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US"
-    wget -O firefox-latest.tar.bz2 "$URL"
-    tar xjf firefox-latest.tar.bz2
-    TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-    if [ -d "/opt/firefox" ]; then
-        sudo mv /opt/firefox /opt/firefox.bak.$TIMESTAMP
+    local response
+    response=$(whiptail --title "Update Firefox" --yesno "This will update Firefox to the latest version. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+
+    if [ $? -eq 0 ]; then
+        cd $HOME/Downloads
+        pkill firefox || true
+        URL="https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US"
+        wget -O firefox-latest.tar.bz2 "$URL"
+        tar xjf firefox-latest.tar.bz2
+        TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+        if [ -d "/opt/firefox" ]; then
+            sudo mv /opt/firefox /opt/firefox.bak.$TIMESTAMP
+        fi
+        sudo mkdir -p /opt/firefox
+        sudo cp -r $HOME/Downloads/firefox/* /opt/firefox
+        rm -rf $HOME/Downloads/firefox-latest.tar.bz2 $HOME/Downloads/firefox
+    else
+        echo "Update canceled by user"
     fi
-    sudo mkdir -p /opt/firefox
-    sudo cp -r $HOME/Downloads/firefox/* /opt/firefox
-    rm -rf $HOME/Downloads/firefox-latest.tar.bz2 $HOME/Downloads/firefox
 }
 
 function install_cac () {
@@ -297,174 +312,297 @@ function install_cac () {
 }
 
 function install_brave () {
-    sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-    echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-    sudo apt update -y && sudo apt install brave-browser -y
+    local response
+    response=$(whiptail --title "Install Brave Browser" --yesno "This will install the Brave Browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+
+    if [ $? -eq 0 ]; then
+        sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+        sudo apt update -y && sudo apt install brave-browser -y
+    else
+        echo "Installation canceled by user"
+    fi
 }
 
 function install_flatpak_and_bottles () {
-    sudo apt install flatpak
-    sudo apt install plasma-discover-backend-flatpak
-    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    flatpak install flathub com.usebottles.bottles -y
+    local response
+    response=$(whiptail --title "Install Flatpak and Bottles" --yesno "This will install Flatpak and Bottles. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+
+    if [ $? -eq 0 ]; then
+        sudo apt install flatpak -y
+        sudo apt install plasma-discover-backend-flatpak -y
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+        flatpak install flathub com.usebottles.bottles -y
+    else
+        echo "Installation canceled by user"
+    fi
 }
 
 function install_protonGE () {
+    if ! command -v steam &> /dev/null; then
+        whiptail --title "Error" --msgbox "Steam is not installed. Please install Steam first." 8 50
+        return 1
+    fi
+
     for cmd in curl jq steam; do
         if ! command -v $cmd &> /dev/null; then
-            echo "$cmd could not be found. Please install it and try again."
+            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
             return 1
         fi
     done
-    latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
-    file_name=$(basename "$latest_release_url_GE")
-    wget "$latest_release_url_GE" -O "$file_name"
-    folder_name=$(basename "$file_name" .tar.gz)
-    # Check if the latest GE folder is already there
-    if [ -d "$HOME/.steam/steam/compatibilitytools.d/$folder_name" ]; then
-        echo "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file."
-        rm "$file_name"
-    else
-        tar -xzvf "$file_name"
-        
-        # Create directory if it doesn't exist
-        if [ ! -d "$HOME/.steam/steam/compatibilitytools.d" ]; then
-            mkdir "$HOME/.steam/steam/compatibilitytools.d"
+
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Proton GE?" 8 50)
+    if [ $? -eq 0 ]; then
+        latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
+        file_name=$(basename "$latest_release_url_GE")
+        wget "$latest_release_url_GE" -O "$file_name"
+        folder_name=$(basename "$file_name" .tar.gz)
+
+        # Check if the latest GE folder is already there
+        if [ -d "$HOME/.steam/steam/compatibilitytools.d/$folder_name" ]; then
+            whiptail --title "Info" --msgbox "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file." 8 50
+            rm "$file_name"
+        else
+            tar -xzvf "$file_name"
+
+            # Create directory if it doesn't exist
+            if [ ! -d "$HOME/.steam/steam/compatibilitytools.d" ]; then
+                mkdir "$HOME/.steam/steam/compatibilitytools.d"
+            fi
+
+            mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
+            rm "$file_name"
+            whiptail --title "Info" --msgbox "Proton GE ($folder_name) has been installed successfully." 8 50
         fi
-        
-        mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
-        rm "$file_name"
     fi
 }
 
 function install_obsidian () {
     for cmd in curl jq; do
         if ! command -v $cmd &> /dev/null; then
-            echo "$cmd could not be found. Please install it and try again."
+            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
             return 1
         fi
     done
-    latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
-    wget "$latest_release_url_Obsidian"
-    file_name=$(basename "$latest_release_url_Obsidian")
-    sudo dpkg -i "$file_name"
-    rm "$file_name"
-    sudo apt --fix-broken install -y
+
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Obsidian?" 8 50)
+    if [ $? -eq 0 ]; then
+        latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
+        wget "$latest_release_url_Obsidian"
+        file_name=$(basename "$latest_release_url_Obsidian")
+        sudo dpkg -i "$file_name"
+        rm "$file_name"
+        sudo apt --fix-broken install -y
+        whiptail --title "Info" --msgbox "Obsidian has been installed successfully." 8 50
+    fi
 }
 
 function install_virtualbox () {
     for cmd in curl; do
         if ! command -v $cmd &> /dev/null; then
-            echo "$cmd could not be found. Please install it and try again."
+            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
             return 1
         fi
     done
-    cd $HOME/Downloads
-    # Add the Oracle VBox 2016 public key
-    if dpkg -l | grep virtualbox > /dev/null; then
-        echo "VirtualBox is already installed."
-        read -p "Do you want to continue and reinstall? (y/n) " choice
-        if [[ "$choice" != "y" ]]; then
-            echo "Exiting script."
-            exit 1
+
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install VirtualBox?" 8 50)
+    if [ $? -eq 0 ]; then
+        cd $HOME/Downloads
+        # Add the Oracle VBox 2016 public key
+        if dpkg -l | grep virtualbox > /dev/null; then
+            response=$(whiptail --title "VirtualBox Already Installed" --yesno "VirtualBox is already installed. Do you want to continue and reinstall?" 8 50)
+            if [ $? -ne 0 ]; then
+                whiptail --title "Info" --msgbox "Exiting script." 8 50
+                return 0
+            fi
         fi
+        curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/vbox.gpg
+        # Add the Oracle VBox public key
+        curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/oracle_vbox.gpg
+        # Add the VirtualBox repository to the system's APT source list
+        # "$(lsb_release -cs)" dynamically gets the codename of your Debian distribution.
+        echo "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
+        # Update the local package index to include the new VirtualBox repository
+        sudo apt update
+        # Install the Linux headers and dkms for the current running kernel
+        sudo apt install linux-headers-$(uname -r) dkms -y
+        # Install latest version of VirtualBox
+        VB_LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'VirtualBox-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        sudo apt install virtualbox-$VB_LATEST_VERSION -y
+        # Download the latest Oracle VM VirtualBox Extension Pack
+        LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'Oracle_VM_VirtualBox_Extension_Pack-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        wget "https://download.virtualbox.org/virtualbox/$LATEST_VERSION/Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack" -O "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
+        # Install the Oracle VM VirtualBox Extension Pack
+        sudo vboxmanage extpack install "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
+        # Remove the downloaded Oracle VM VirtualBox Extension Pack
+        rm "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
+        # Add the current user to the vboxusers group to grant permission to access the vboxdrv kernel module and Change the user’s group to vboxusers for the current session
+        sudo usermod -aG vboxusers $USER && newgrp vboxusers
+        whiptail --title "Info" --msgbox "Please log out and log back in to apply the group changes." 8 50
     fi
-    curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/vbox.gpg
-    # Add the Oracle VBox public key
-    curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/oracle_vbox.gpg
-    # Add the VirtualBox repository to the system's APT source list
-    # "$(lsb_release -cs)" dynamically gets the codename of your Debian distribution.
-    echo "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
-    # Update the local package index to include the new VirtualBox repository
-    sudo apt update
-    # Install the Linux headers and dkms for the current running kernel
-    sudo apt install linux-headers-$(uname -r) dkms -y
-    # Install latest version of VirtualBox
-    VB_LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'VirtualBox-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    sudo apt install virtualbox-$VB_LATEST_VERSION -y
-    # Download the latest Oracle VM VirtualBox Extension Pack
-    LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'Oracle_VM_VirtualBox_Extension_Pack-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    wget "https://download.virtualbox.org/virtualbox/$LATEST_VERSION/Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack" -O "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
-    # Install the Oracle VM VirtualBox Extension Pack
-    sudo vboxmanage extpack install "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
-    # Remove the downloaded Oracle VM VirtualBox Extension Pack
-    rm "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
-    # Add the current user to the vboxusers group to grant permission to access the vboxdrv kernel module and Change the user’s group to vboxusers for the current session
-    sudo usermod -aG vboxusers $USER && newgrp vboxusers
-    echo "Please log out and log back in to apply the group changes."
 }
+
 
 function install_python_packages () {
     for cmd in python3 pip3; do
         if ! command -v $cmd &> /dev/null; then
-            echo "$cmd could not be found. Please install it and try again."
+            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
             return 1
         fi
     done
-    packages=(
-    aiohttp
-    aiosignal
-    alpha-vantage
-    api
-    async-generator
-    async-timeout
-    attrs
-    beautifulsoup4
-    certifi
-    charset-normalizer
-    et
-    et-xmlfile
-    exceptiongroup
-    frozenlist
-    greenlet
-    h11
-    idna
-    multidict
-    nose
-    numpy
-    openpyxl
-    outcome
-    packaging
-    pandas
-    patsy
-    Pint
-    psycopg
-    psycopg2-binary
-    PySocks
-    python-dateutil
-    pytz
-    regex
-    requests
-    scipy
-    selenium
-    sniffio
-    sortedcontainers
-    soupsieve
-    SQLAlchemy
-    statsmodels
-    tk
-    tqdm
-    trio
-    trio-websocket
-    typing_extensions
-    tzdata
-    urllib3
-    var
-    workbook
-    wsproto
-    xlrd
-    xlutils
-    xlwt
-    yarl
-    )
-    #more effecient way to install python packages than for loop
-    pip3 install "${packages[@]}" --break-system-packages
+
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install the Python packages?" 8 50)
+    if [ $? -eq 0 ]; then
+        packages=(
+            aiohttp
+            aiosignal
+            alpha-vantage
+            api
+            async-generator
+            async-timeout
+            attrs
+            beautifulsoup4
+            certifi
+            charset-normalizer
+            et
+            et-xmlfile
+            exceptiongroup
+            frozenlist
+            greenlet
+            h11
+            idna
+            multidict
+            nose
+            numpy
+            openpyxl
+            outcome
+            packaging
+            pandas
+            patsy
+            Pint
+            psycopg
+            psycopg2-binary
+            PySocks
+            python-dateutil
+            pytz
+            regex
+            requests
+            scipy
+            selenium
+            sniffio
+            sortedcontainers
+            soupsieve
+            SQLAlchemy
+            statsmodels
+            tk
+            tqdm
+            trio
+            trio-websocket
+            typing_extensions
+            tzdata
+            urllib3
+            var
+            workbook
+            wsproto
+            xlrd
+            xlutils
+            xlwt
+            yarl
+        )
+        # More efficient way to install python packages than for loop
+        pip3 install "${packages[@]}" --break-system-packages
+        whiptail --title "Info" --msgbox "Python packages installed successfully." 8 50
+    fi
 }
 
+
 function install_git () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Git?" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
+
     #make git from source
-    wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/git-openssl.sh && chmod +x git-openssl.sh && ./git-openssl.sh
-    rm git-openssl.sh
+    set -eu
+    # Gather command line options
+    SKIPTESTS=
+    BUILDDIR=
+    SKIPINSTALL=
+    for i in "$@"; do 
+    case $i in 
+        -skiptests|--skip-tests) # Skip tests portion of the build
+        SKIPTESTS=YES
+        shift
+        ;;
+        -d=*|--build-dir=*) # Specify the directory to use for the build
+        BUILDDIR="${i#*=}"
+        shift
+        ;;
+        -skipinstall|--skip-install) # Skip dpkg install
+        SKIPINSTALL=YES
+        ;;
+        *)
+        #TODO Maybe define a help section?
+        ;;
+    esac
+    done
+
+    # Use the specified build directory, or create a unique temporary directory
+    set -x
+    BUILDDIR=${BUILDDIR:-$(mktemp -d)}
+    mkdir -p "${BUILDDIR}"
+    cd "${BUILDDIR}"
+
+    # Download the source tarball from GitHub
+    sudo apt update
+    sudo apt install curl jq -y
+    git_tarball_url="$(curl --retry 5 "https://api.github.com/repos/git/git/tags" | jq -r '.[0].tarball_url')"
+    curl -L --retry 5 "${git_tarball_url}" --output "git-source.tar.gz"
+    tar -xf "git-source.tar.gz" --strip 1
+
+    # Source dependencies
+    # Don't use gnutls, this is the problem package.
+    if sudo apt remove --purge libcurl4-gnutls-dev -y; then
+    # Using apt-get for these commands, they're not supported with the apt alias on 14.04 (but they may be on later systems)
+    sudo apt autoremove -y
+    sudo apt autoclean
+    fi
+    # Meta-things for building on the end-user's machine
+    sudo apt install build-essential autoconf dh-autoreconf -y
+    # Things for the git itself
+    sudo apt install libcurl4-openssl-dev tcl-dev gettext asciidoc libexpat1-dev libz-dev -y
+
+    # Build it!
+    make configure
+    # --prefix=/usr
+    #    Set the prefix based on this decision tree: https://i.stack.imgur.com/BlpRb.png
+    #    Not OS related, is software, not from package manager, has dependencies, and built from source => /usr
+    # --with-openssl
+    #    Running ripgrep on configure shows that --with-openssl is set by default. Since this could change in the
+    #    future we do it explicitly
+    ./configure --prefix=/usr --with-openssl
+    make 
+    if [[ "${SKIPTESTS}" != "YES" ]]; then
+    make test
+    fi
+
+    # Install
+    if [[ "${SKIPINSTALL}" != "YES" ]]; then
+    # If you have an apt managed version of git, remove it
+    if sudo apt remove --purge git -y; then
+        sudo apt autoremove -y
+        sudo apt autoclean
+    fi
+    # Install the version we just built
+    sudo make install #install-doc install-html install-info
+    echo "Make sure to refresh your shell!"
+    bash -c 'echo "$(which git) ($(git --version))"'
+    fi
     cd $HOME
     mkdir ~/.mycerts
     cd ~/.mycerts
@@ -476,10 +614,18 @@ function install_git () {
     cd $HOME
     chmod 700 ~/.mycerts
     # Prompt the user for their name and email
-    read -p "Please enter your name: " name
-    read -p "Please enter your email: " email
-    git config --global user.name "$name"
-    git config --global user.email "$email"
+    local name
+    local email
+    name=$(whiptail --inputbox "Please enter your name:" 8 50 --title "User Name" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus -ne 0 ]; then
+        return
+    fi
+    email=$(whiptail --inputbox "Please enter your email:" 8 50 --title "User Email" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus -ne 0 ]; then
+        return
+    fi
     git config --global core.editor "code"
     #git config --global http.sslCAInfo ~/.mycerts/dod_cert_bundle.pem
     git config --global http.sslverify false
@@ -489,16 +635,16 @@ function install_git () {
     # Go to the Documents directory
     cd "$DOCUMENTS_DIR" || { echo "Failed to switch to the Documents directory"; exit 1; }
     # Check if SSH Key already exists
-    if [ ! -f ~/.ssh/github_ssh_key ]; then
+    local ssh_key_path=~/.ssh/github_ssh_key.pub
+    local ssh_key
+    if [ ! -f "$ssh_key_path" ]; then
         # 1. Generate SSH Key (without passphrase for automation; you can modify as needed)
         ssh-keygen -t ed25519 -C "danalexanderbu@gmail.com" -f ~/.ssh/github_ssh_key || { echo "SSH key generation failed"; exit 1; }
-        # 3. Prompt user to manually add the public key to GitHub
-        echo "Please add the following SSH key to your GitHub account:"
-        cat ~/.ssh/github_ssh_key.pub
-        echo "Once you've added it, press any key to continue..."
-        read -n 1 -s
+        ssh_key=$(cat "$ssh_key_path")
+        whiptail --msgbox "Please add the following SSH key to your GitHub account:\n\n$ssh_key" 10 60
     else
-        echo "SSH key already exists. Skipping generation..."
+        ssh_key=$(cat "$ssh_key_path")
+        whiptail --msgbox "SSH key already exists:\n\n$ssh_key" 10 60
     fi
     # 2. Start the ssh-agent in the background and add the SSH key
     eval "$(ssh-agent -s)"
@@ -517,32 +663,50 @@ function install_git () {
 }
 
 function install_theme () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install themes?" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
+
     for cmd in git; do
         if ! command -v $cmd &> /dev/null; then
             echo "$cmd could not be found. Please install it and try again."
             return 1
         fi
     done
+
     cd $HOME/Documents/
+
     # Clone the Layan-kde repository from GitHub to the current directory (Documents)
     git clone https://github.com/vinceliuice/Layan-kde.git
     cd Layan-kde
     ./install.sh
     cd $HOME/Documents/
+
     # Clone the Tela-icon-theme repository from GitHub to the current directory (Documents) 
     git clone https://github.com/vinceliuice/Tela-icon-theme.git
     cd Tela-icon-theme
     # Install the Tela icon theme 
     ./install.sh
+
     git clone https://github.com/ryanoasis/nerd-fonts.git
     cd nerd-fonts
     ./install.sh
     # update font cache
     sudo fc-cache -f -v
     cd $HOME
+
+    whiptail --msgbox "Themes installed successfully! Please make sure to apply them through your desktop environment settings." 10 60
 }
 
 function configure_bashrc () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to configure your .bashrc file to be FREAKING AWESOME????" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
+
     # Backup the existing .bashrc
     cp ~/.bashrc ~/.bashrc_backup
     # Append the new content to .bashrc using tee
@@ -923,6 +1087,12 @@ EOF
 }
 
 function enable_UFW () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to enable UFW and configure rules for Git Steam and Unraid?" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
+
     sudo ufw enable
     #Allow internet
     sudo ufw allow 80
@@ -944,6 +1114,7 @@ function enable_UFW () {
     sudo ufw allow 4380/udp
     sudo ufw reload
 }
+
 #error handling when a function fails
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 LOGFILE="install_log_${TIMESTAMP}.txt"
@@ -966,6 +1137,19 @@ while true; do
         "4" "Remove Packages" \
         "5" "Download and Install .deb" \
         "6" "Install btop" \
+        "7" "Install Firefox" \
+        "8" "Update Firefox" \
+        "9" "Install Brave" \
+        "10" "Install Flatpak and Bottles" \
+        "11" "Install ProtonGE" \
+        "12" "Install Obsidian" \
+        "13" "Install VirtualBox" \
+        "14" "Install Python Packages" \
+        "15" "Install Git" \
+        "16" "Install Theme" \
+        "17" "Configure .bashrc" \
+        "18" "Enable UFW" \
+        "19" "Install Everything" \
         "20" "Exit" 3>&1 1>&2 2>&3)
     
     case $choice in
@@ -975,7 +1159,21 @@ while true; do
         4) function_status remove_packages;;
         5) function_status download_and_install_deb;;
         6) function_status install_btop;;
-        18) function_status apt_installs
+        7) function_status install_firefox;;
+        8) function_status update_firefox;;
+        9) function_status install_brave;;
+        10) function_status install_flatpak_and_bottles;;
+        11) function_status install_protonGE;;
+        12) function_status install_obsidian;;
+        13) function_status install_virtualbox;;
+        14) function_status instal_python_packages;;
+        15) function_status install_git;;
+        16) function_status install_theme;;
+        17) function_status configure_bashrc;;
+        18) function_status enable_UFW;;
+        19) function_status blacklist_nouveau;
+            function_status add_repositories;
+            function_status apt_installs;
             function_status download_and_install_deb;
             function_status install_btop;
             function_status install_brave;
@@ -991,7 +1189,6 @@ while true; do
             function_status install_cac;
             function_status enable_UFW;
             function_status install_virtualbox;;
-        19) function_status remove_installed_packages;;
         20) echo "Exiting script."; break;;
         *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
     esac
