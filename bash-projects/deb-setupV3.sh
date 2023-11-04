@@ -316,10 +316,13 @@ function install_mullvad-browser () {
     local response
     response=$(whiptail --title "Install Mullvad" --yesno "This will install Mullvad VPN. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
     cd $HOME/Downloads
-    wget https://mullvad.net/download/app/deb/latest -O mullvad-vpn_*.deb
-    sudo dpkg -i mullvad-vpn_*.deb
-    rm mullvad-vpn_*.deb
-    sudo apt --fix-broken install -y
+    wget https://mullvad.net/en/download/browser/linux-x86_64/latest -O mullvad-browser-linux-x86_64*.tar.xz
+    tar -xvf mullvad-browser-linux-x86_64*.tar.xz
+    sudo mkdir -p /opt/mullvad-browser
+    sudo cp -r $HOME/Downloads/mullvad-browser-linux-x86_64/* /opt/mullvad-browser
+    sudo chown -R daniel:daniel mullvad-browser
+    cd $HOME/Desktop
+    rm -r mullvad-browser-linux-x86_64*
 }
 
 function install_brave-browser () {
