@@ -1,731 +1,1250 @@
 #!/bin/bash
-###Debian 12 approved###
-### Apt Installs ###
-#echo "blacklist nouveau" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
-#echo "options nouveau modeset=0" | sudo tee -a /etc/modprobe.d/blacklist-nouveau.conf
-sudo update-initramfs -u
-sudo apt-add-repository non-free
-sudo apt install software-properties-common -y
-sudo apt-add-repository contrib non-free -y
-sudo apt update -y
-install=(
-    libpcsclite1
-    pcscd
-    libccid
-    libpcsc-perl
-    pcsc-tools
-    libnss3-tools
-    ffmpeg
-    obs-studio
-    openssl
-    qbittorrent
-    ttf-mscorefonts-installer
-    python3
-    python3-pip
-    vim
-    ethtool
-    net-tools
-    nmap
-    samba
-    gnome-keyring
-    apt-transport-https
-    docker
-    gnupg2
-    ebtables
-    aria2
-    thunderbird
-    ufw
-    timeshift
-    nvidia-driver
-    nfs-common
-    neofetch
-    curl
-    lsb-release
-    unattended-upgrades
-)
-for p in "${install[@]}"; do
-    if ! dpkg-query -Wf'${db:Status-abbrev}' "$p" 2>/dev/null | grep -q '^i'; then
-        sudo apt install "$p" -y || { echo "Failed to install $p"; exit 1; }
+#Intended to give the user a choice of what to install on a fresh debian install or to update an existing install
+#This script has some parts intended for root and some for the user
+#The apt_installs function is intended to be run as root and can be updated to include more packages
+#The update_firefox function is intended to be run as root as Debian does not allow the user to update firefox automatically
+#This has been tested on Debian 12 (Bookworm)
+#If you have a problem with CAC setup try opening firefox and chrome and then rerunning the script
+function blacklist_nouveau() {
+    # Check if whiptail is installed
+    if ! command -v whiptail &> /dev/null; then
+        echo "whiptail is not installed. Installing now..."
+        sudo apt update
+        sudo apt install whiptail -y
+        # Restart the function after installing whiptail
+        blacklist_nouveau
+        return
     fi
-done
-sudo fc-cache -f -v
-sudo apt install $(check-language-support) -y
-sudo apt remove --purge kwalletmanager
-sudo apt update -y && sudo apt upgrade -y
 
-### Download and Install DEB Packages ###
-declare -a urls=(
-"https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
-"https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
-"https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
-"https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
-"https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
-"https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
-"http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
-"http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
-)
+    whiptail --title "Notice" --msgbox "The nouveau driver will be blacklisted and should be checked if using Nvidia GPU" 10 60
+    echo "blacklist nouveau" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
+    echo "options nouveau modeset=0" | sudo tee -a /etc/modprobe.d/blacklist-nouveau.conf
+    sudo update-initramfs -u
+}
 
-for url in "${urls[@]}"; do
-    file_name=$(basename "$url")
-    # Download the .deb package
-    wget "$url" -O "$file_name"
-    echo "Successfully downloaded $file_name"
-
-    # Install the .deb package
-    sudo dpkg -i "$file_name" || sudo apt --fix-broken install -y
-    echo "Successfully installed $file_name"
-    
-    # Remove the downloaded .deb package
-    rm "$file_name"
-done
-
-steam &
-cd $HOME
-
-### Btop ###
-latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .assets[11].browser_download_url)
-btop_file_name=$(basename "$latest_release_btop")
-wget "$latest_release_btop" -O "$btop_file_name"
-tar -xjf "$btop_file_name"
-cd btop
-./install.sh
-cd $HOME
-rm -r "$btop_file_name"
-
-### Firefox Brower ###
-sudo apt remove firefox-esr -y
-sudo apt purge firefox-esr -y
-sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 2667CA5C
-sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
-cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
-sudo rm ~/ubuntuzilla.gpg
-echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
-sudo apt update -y && sudo apt upgrade -y
-sudo apt install firefox-mozilla-build -y
-
-### CAC ###
-wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/deb_cac_setup.sh && chmod +x deb_cac_setup.sh && sudo ./deb_cac_setup.sh
-
-### Kubernetes ###
-
-
-### Brave Browser ###
-sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-sudo apt update -y && sudo apt install brave-browser -y
-
-### Git ###
-#make git from source
-wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/git-openssl.sh && chmod +x git-openssl.sh && ./git-openssl.sh
-rm git-openssl.sh
-cd $HOME
-mkdir ~/.mycerts
-cd ~/.mycerts
-wget https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_DoD.zip -O unclass-certificates_pkcs7_DoD.zip
-unzip unclass-certificates_pkcs7_DoD.zip
-cd ~/.mycerts/certificates_pkcs7_v5_12_dod
-openssl pkcs7 -print_certs -in certificates_pkcs7_v5_12_dod_pem.p7b -out dod_cert_bundle.pem
-chmod 600 ~/.mycerts/certificates_pkcs7_v5_12_dod/dod_cert_bundle.pem
-cd $HOME
-chmod 700 ~/.mycerts
-# Prompt the user for their name and email
-read -p "Please enter your name: " name
-read -p "Please enter your email: " email
-git config --global user.name "$name"
-git config --global user.email "$email"
-git config --global core.editor "code"
-#git config --global http.sslCAInfo ~/.mycerts/dod_cert_bundle.pem
-git config --global http.sslverify false
-git config --global http.sslverify true
-# Define the path to the Documents directory
-DOCUMENTS_DIR="$HOME/Documents"
-# Go to the Documents directory
-cd "$DOCUMENTS_DIR" || { echo "Failed to switch to the Documents directory"; exit 1; }
-# Check if SSH Key already exists
-if [ ! -f ~/.ssh/github_ssh_key ]; then
-    # 1. Generate SSH Key (without passphrase for automation; you can modify as needed)
-    ssh-keygen -t ed25519 -C "danalexanderbu@gmail.com" -f ~/.ssh/github_ssh_key || { echo "SSH key generation failed"; exit 1; }
-    # 3. Prompt user to manually add the public key to GitHub
-    echo "Please add the following SSH key to your GitHub account:"
-    cat ~/.ssh/github_ssh_key.pub
-    echo "Once you've added it, press any key to continue..."
-    read -n 1 -s
-else
-    echo "SSH key already exists. Skipping generation..."
-fi
-# 2. Start the ssh-agent in the background and add the SSH key
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/github_ssh_key || { echo "Failed to add SSH key to agent"; exit 1; }
-# Update or create SSH config to use the specific key for GitHub
-if [ ! -f ~/.ssh/config ]; then
-    touch ~/.ssh/config
-fi
-echo -e "Host github.com\n  IdentityFile ~/.ssh/github_ssh_key" >> ~/.ssh/config
-# Inform user to continue with cloning
-echo "You can now clone your repositories."
-# Clone the repositories into their respective folders
-git clone git@github.com:danalexanderbu/personal.git personal || { echo "Failed to clone personal"; exit 1; }
-git clone git@github.com:danalexanderbu/My_Repo.git My_Repo || { echo "Failed to clone My_Repo"; exit 1; }
-cd $HOME
-
-### Flatpak ###
-sudo apt install flatpak
-sudo apt install plasma-discover-backend-flatpak
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak install flathub com.usebottles.bottles -y
-
-### Battle.net Installation ###
-# Add a non steam game to steam called Battle.net and install it
-wget "https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&gameProgram=BATTLENET_APP" -O "Battle.net-Setup.exe"
-
-### Proton GE Custom Installation ###
-latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
-file_name=$(basename "$latest_release_url_GE")
-wget "$latest_release_url_GE" -O "$file_name"
-folder_name=$(basename "$file_name" .tar.gz)
-# Check if the latest GE folder is already there
-if [ -d "$HOME/.steam/steam/compatibilitytools.d/$folder_name" ]; then
-    echo "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file."
-    rm "$file_name"
-else
-    tar -xzvf "$file_name"
-    
-    # Create directory if it doesn't exist
-    if [ ! -d "$HOME/.steam/steam/compatibilitytools.d" ]; then
-        mkdir "$HOME/.steam/steam/compatibilitytools.d"
+function add_repositories() {
+    # Check if whiptail is installed
+    if ! command -v whiptail &> /dev/null; then
+        echo "whiptail is not installed. Installing now..."
+        sudo apt update
+        sudo apt install whiptail -y
+        # Restart the function after installing whiptail
+        add_repositories
+        return
     fi
-    
-    mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
-    rm "$file_name"
+
+    whiptail --title "Notice" --msgbox "Non-free and contrib repositories will be added" 10 60
+    sudo add-apt-repository non-free -y
+    sudo add-apt-repository contrib non-free -y
+}
+
+function apt_installs() {
+    declare -a packages=(
+        "libpcsclite1" "PC/SC Lite shared library" ON \
+        "pcscd" "Middleware to access a smart card" ON \
+        "libccid" "PC/SC driver for USB CCID smart card readers" ON \
+        "libpcsc-perl" "Perl bindings for PC/SC" ON \
+        "pcsc-tools" "Tools for testing PC/SC drivers and applications" ON \
+        "libnss3-tools" "Network Security Service tools" ON \
+        "ffmpeg" "Multimedia player, server and encoder" ON \
+        "obs-studio" "Open broadcaster software studio" ON \
+        "openssl" "Secure Sockets Layer toolkit" ON \
+        "qbittorrent" "Free and reliable P2P BitTorrent client" ON \
+        "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" ON \
+        "python3" "Python 3 interpreter" ON \
+        "googler" "Google from the terminal" ON \
+        "python3-pip" "Python package installer" ON \
+        "vim" "Vi IMproved - enhanced vi editor" ON \
+        "ethtool" "Utility for controlling network drivers and hardware" ON \
+        "net-tools" "Networking tools" ON \
+        "nmap" "Network exploration tool and security scanner" ON \
+        "samba" "SMB/CIFS file, print, and login server for Unix" ON \
+        "gnome-keyring" "GNOME keyring services" ON \
+        "apt-transport-https" "APT transport for downloading via the HTTPS protocol" ON \
+        "docker" "Container platform tool" ON \
+        "gnupg2" "GNU privacy guard - modern version" ON \
+        "ebtables" "Ethernet bridge frame table administration" ON \
+        "aria2" "High speed download utility" ON \
+        "thunderbird" "Email, news and chat client from Mozilla" ON \
+        "ufw" "Uncomplicated Firewall" ON \
+        "timeshift" "System restore tool for Linux" ON \
+        "nfs-common" "NFS support files common to client and server" ON \
+        "neofetch" "System information tool" ON \
+        "curl" "Command line tool for transferring data with URL syntax" ON \
+        "lsb-release" "Linux Standard Base version reporting utility" ON \
+        "unattended-upgrades" "Automatic installation of security upgrades" ON \
+        "mlocate" "Faster locate using database" ON \
+        "kwalletmanager" "KDE wallet manager" OFF \
+        "plasma-discover" "KDE Discover software store" OFF \
+        "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF
+    )
+
+# Use whiptail to display the checklist
+selected_packages=$(whiptail --title "Package Installation" --checklist \
+"Select the packages you want to install:" 30 90 20 \
+"${packages[@]}" 3>&1 1>&2 2>&3)
+echo "Selected packages: $selected_packages"
+
+whiptail --title "Notice" --msgbox "After your package selections, the following actions will be taken:\n\n1. Fonts cache will be refreshed using: sudo fc-cache -f -v\n2. Language support packages will be installed.\n3. System will be updated and upgraded." 12 78
+
+# If user pressed Cancel, selected_packages will be empty
+if [ $? -eq 0 ] && [ ! -z "$selected_packages" ]; then
+    for pkg in $selected_packages; do
+        # Remove surrounding quotes from package names
+        pkg=$(echo $pkg | tr -d '"')
+        if ! dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
+            sudo apt install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
+        fi
+    done
+    # If the user did not select these packages, then remove them
+    if [[ $selected_packages != *"kwalletmanager"* ]]; then
+        sudo apt remove --purge kwalletmanager -y
+    fi
+    if [[ $selected_packages != *"plasma-discover"* ]]; then
+        sudo apt remove --purge plasma-discover -y
+    fi
+    if [[ $selected_packages != *"plasma-discover-snap-backend"* ]]; then
+        sudo apt remove --purge plasma-discover-snap-backend -y
+    fi
+
+    sudo fc-cache -f -v
+    sudo apt install $(check-language-support) -y
+    sudo apt update -y && sudo apt upgrade -y
 fi
-
-### Install Obsidian ###
-latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
-wget "$latest_release_url_Obsidian"
-file_name=$(basename "$latest_release_url_Obsidian")
-sudo dpkg -i "$file_name"
-rm "$file_name"
-sudo apt --fix-broken install -y
-
-### VirtualBox Installation ###
-# Add the Oracle VBox 2016 public key
-curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/vbox.gpg
-# Add the Oracle VBox public key
-curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/oracle_vbox.gpg
-# Add the VirtualBox repository to the system's APT source list
-# "$(lsb_release -cs)" dynamically gets the codename of your Debian distribution.
-echo "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
-# Update the local package index to include the new VirtualBox repository
-sudo apt update
-# Install the Linux headers and dkms for the current running kernel
-sudo apt install linux-headers-$(uname -r) dkms -y
-# Install VirtualBox version 7.0
-sudo apt install virtualbox-7.0 -y
-# Add the current user to the vboxusers group to grant permission to access the vboxdrv kernel module
-sudo usermod -aG vboxusers $USER
-# Change the user’s group to vboxusers for the current session
-newgrp vboxusers
-# Download the Oracle VM VirtualBox Extension Pack
-wget https://download.virtualbox.org/virtualbox/7.0.10/Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
-# Install the Oracle VM VirtualBox Extension Pack
-sudo vboxmanage extpack install Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
-# Remove the downloaded Oracle VM VirtualBox Extension Pack
-rm Oracle_VM_VirtualBox_Extension_Pack-7.0.10.vbox-extpack
-
-### Python Packages ###
-packages=(
-aiohttp
-aiosignal
-alpha-vantage
-api
-async-generator
-async-timeout
-attrs
-beautifulsoup4
-certifi
-charset-normalizer
-et
-et-xmlfile
-exceptiongroup
-frozenlist
-greenlet
-h11
-idna
-multidict
-nose
-numpy
-openpyxl
-outcome
-packaging
-pandas
-patsy
-Pint
-psycopg
-psycopg2-binary
-PySocks
-python-dateutil
-pytz
-regex
-requests
-scipy
-selenium
-sniffio
-sortedcontainers
-soupsieve
-SQLAlchemy
-statsmodels
-tk
-tqdm
-trio
-trio-websocket
-typing_extensions
-tzdata
-urllib3
-var
-workbook
-wsproto
-xlrd
-xlutils
-xlwt
-yarl
-)
-#more effecient way to install python packages than for loop
-pip3 install "${packages[@]}" --break-system-packages
-
-### Configure UFW ###
-sudo ufw enable
-#Allow internet
-sudo ufw allow 80
-sudo ufw allow 443
-#Allow Git
-sudo ufw allow 22
-sudo ufw allow 9418
-#Allow unraid
-sudo ufw allow from 192.168.1.133 to any port 80
-sudo ufw allow from 192.168.1.133 to any port 443
-sudo ufw allow from 192.168.1.133 to any port 137:139
-sudo ufw allow from 192.168.1.133 to any port 445
-#Allow steam
-sudo ufw allow 27000:27050/udp
-sudo ufw allow 27000:27050/tcp
-sudo ufw allow 27015:27030/udp
-sudo ufw allow 27036:27037/tcp
-sudo ufw allow 27031:27036/udp
-sudo ufw allow 4380/udp
-sudo ufw restart
-
-### Configure .bashrc ###
-# Backup the existing .bashrc
-cp ~/.bashrc ~/.bashrc_backup
-# Append the new content to .bashrc using tee
-### My custom .bashrc file ###
-cat << 'EOF' | tee -a ~/.bashrc > /dev/null
-# Don't put duplicate lines in the history and do not add lines that start with a space
-export HISTCONTROL=erasedups:ignoredups:ignorespace
-
-# Color for manpages in less makes manpages a little easier to read
-export LESS_TERMCAP_mb=$'\E[01;31m'
-export LESS_TERMCAP_md=$'\E[01;31m'
-export LESS_TERMCAP_me=$'\E[0m'
-export LESS_TERMCAP_se=$'\E[0m'
-export LESS_TERMCAP_so=$'\E[01;44;33m'
-export LESS_TERMCAP_ue=$'\E[0m'
-export LESS_TERMCAP_us=$'\E[01;32m'
-
-#My custom aliases
-alias uu="sudo apt update && sudo apt upgrade"
-
-# Alias's for multiple directory listing commands
-alias la='ls -Alh' # show hidden files
-alias ls='ls -aFh --color=always' # add colors and file type extensions
-alias lx='ls -lXBh' # sort by extension
-alias lk='ls -lSrh' # sort by size
-alias lc='ls -lcrh' # sort by change time
-alias lu='ls -lurh' # sort by access time
-alias lr='ls -lRh' # recursive ls
-alias lt='ls -ltrh' # sort by date
-alias lm='ls -alh |more' # pipe through 'more'
-alias lw='ls -xAh' # wide listing format
-alias ll='ls -Fls' # long listing format
-alias labc='ls -lap' #alphabetical sort
-alias lf="ls -l | egrep -v '^d'" # files only
-alias ldir="ls -l | egrep '^d'" # directories only
-
-# Change directory aliases
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-
-# Search command line history
-alias h="history | grep "
-
-# Search files in the current folder
-alias f="find . | grep "
-
-# Count all files (recursively) in the current folder
-alias countfiles="for t in files links directories; do echo \`find . -type \${t:0:1} | wc -l\` \$t; done 2> /dev/null"
-
-# Show open ports
-alias openports='netstat -nape --inet'
-
-# Alias's for archives
-alias mktar='tar -cvf'
-alias mkbz2='tar -cvjf'
-alias mkgz='tar -cvzf'
-alias untar='tar -xvf'
-alias unbz2='tar -xvjf'
-alias ungz='tar -xvzf'
-
-# Show all logs in /var/log
-alias logs="sudo find /var/log -type f -exec file {} \; | grep 'text' | cut -d' ' -f1 | sed -e's/:$//g' | grep -v '[0-9]$' | xargs tail -f"
-
-# Extracts any archive(s) (if unp isn't installed)
-extract () {
-	for archive in "$@"; do
-		if [ -f "$archive" ] ; then
-			case $archive in
-				*.tar.bz2)   tar xvjf $archive    ;;
-				*.tar.gz)    tar xvzf $archive    ;;
-				*.bz2)       bunzip2 $archive     ;;
-				*.rar)       rar x $archive       ;;
-				*.gz)        gunzip $archive      ;;
-				*.tar)       tar xvf $archive     ;;
-				*.tbz2)      tar xvjf $archive    ;;
-				*.tgz)       tar xvzf $archive    ;;
-				*.zip)       unzip $archive       ;;
-				*.Z)         uncompress $archive  ;;
-				*.7z)        7z x $archive        ;;
-				*)           echo "don't know how to extract '$archive'..." ;;
-			esac
-		else
-			echo "'$archive' is not a valid file!"
-		fi
-	done
 }
 
-# Show current network information
-netinfo ()
-{
-	echo "--------------- Network Information ---------------"
-	/sbin/ifconfig | awk '/inet / {print "IP Address: " $2}'
-	echo ""
-	/sbin/ifconfig | awk '/broadcast / {print "Broadcast Address: " $4}'
-	echo ""
-	/sbin/ifconfig | awk '/ether / {print "MAC Address: " $2}'
-	echo "---------------------------------------------------"
-}
+function remove_packages() {
+    local installed_packages=(
+        "libpcsclite1" "PC/SC Lite shared library" OFF \
+        "pcscd" "Middleware to access a smart card" OFF \
+        "libccid" "PC/SC driver for USB CCID smart card readers" OFF \
+        "libpcsc-perl" "Perl bindings for PC/SC" OFF \
+        "pcsc-tools" "Tools for testing PC/SC drivers and applications" OFF \
+        "libnss3-tools" "Network Security Service tools" OFF \
+        "ffmpeg" "Multimedia player, server and encoder" OFF \
+        "obs-studio" "Open broadcaster software studio" OFF \
+        "openssl" "Secure Sockets Layer toolkit" OFF \
+        "qbittorrent" "Free and reliable P2P BitTorrent client" OFF \
+        "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" OFF \
+        "python3" "Python 3 interpreter" OFF \
+        "python3-pip" "Python package installer" OFF \
+        "vim" "Vi IMproved - enhanced vi editor" OFF \
+        "ethtool" "Utility for controlling network drivers and hardware" OFF \
+        "net-tools" "Networking tools" OFF \
+        "nmap" "Network exploration tool and security scanner" OFF
+        "samba" "SMB/CIFS file, print, and login server for Unix" OFF \
+        "gnome-keyring" "GNOME keyring services" OFF \
+        "apt-transport-https" "APT transport for downloading via the HTTPS protocol" OFF \
+        "docker" "Container platform tool" OFF \
+        "gnupg2" "GNU privacy guard - modern version" OFF \
+        "ebtables" "Ethernet bridge frame table administration" OFF \
+        "aria2" "High speed download utility" OFF \
+        "thunderbird" "Email, news and chat client from Mozilla" OFF \
+        "ufw" "Uncomplicated Firewall" OFF \
+        "timeshift" "System restore tool for Linux" OFF \
+        "nfs-common" "NFS support files common to client and server" OFF \
+        "neofetch" "System information tool" OFF \
+        "curl" "Command line tool for transferring data with URL syntax" OFF \
+        "lsb-release" "Linux Standard Base version reporting utility" OFF \
+        "unattended-upgrades" "Automatic installation of security upgrades" OFF \
+        "kwalletmanager" "KDE wallet manager" OFF \
+        "plasma-discover" "KDE Discover software store" OFF \
+        "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF
+        "brave-browser" "Brave browser" OFF \
+        "google-chrome-stable" "Google Chrome" OFF \
+        "firefox" "Firefox" OFF \
+        "thorium-browser" "Thorium browser" OFF \
+        "mullvad-vpn" "Mullvad browser" OFF \
+    )
+       
+    for pkg in "${packages[@]}"; do
+        if dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
+            if [[ " ${default_selection[@]} " =~ " ${pkg} " ]]; then
+                installed_packages+=("$pkg" "Installed" "ON")
+            else
+                installed_packages+=("$pkg" "Installed" "OFF")
+            fi
+        fi
+    done
 
-# IP address lookup
-alias whatismyip="whatsmyip"
-function whatsmyip ()
-{
-	# Dumps a list of all IP addresses for every device
-	# /sbin/ifconfig |grep -B1 "inet addr" |awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' |awk -F: '{ print $1 ": " $3 }';
-	
-	### Old commands
-	# Internal IP Lookup
-	#echo -n "Internal IP: " ; /sbin/ifconfig eth0 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}'
-#
-#	# External IP Lookup
-	#echo -n "External IP: " ; wget http://smart-ip.net/myip -O - -q
-	
-	# Internal IP Lookup.
-	if [ -e /sbin/ip ];
-	then
-		echo -n "Internal IP: " ; /sbin/ip addr show enp6s0 | grep "inet " | awk -F: '{print $1}' | awk '{print $2}'
-	else
-		echo -n "Internal IP: " ; /sbin/ifconfig enp6s0 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
-	fi
+    local to_remove=$(whiptail --title "Remove Packages" --checklist \
+    "Select the packages you want to remove:" 30 90 20 \
+    "${installed_packages[@]}" 3>&1 1>&2 2>&3)
 
-	# External IP Lookup 
-	echo -n "External IP: " ; curl -s ifconfig.me
-}
+    echo "to_remove: $to_remove"  # Add this line for debugging
 
-# Show the current distribution
-distribution() {
-  if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    echo "$ID"
-  else
-    echo "unknown"
-  fi
-}
-
-# Show the current version of the operating system
-ver() {
-  local dtype
-  dtype=$(distribution)
-
-  if [ "$dtype" == "rhel" ] || [ "$dtype" == "centos" ]; then
-    cat /etc/redhat-release && uname -a
-  elif [ "$dtype" == "suse" ] || [ "$dtype" == "opensuse" ]; then
-    cat /etc/os-release # SuSE and openSUSE use os-release
-  elif [ "$dtype" == "debian" ] || [ "$dtype" == "ubuntu" ]; then
-    lsb_release -a
-  elif [ "$dtype" == "gentoo" ]; then
-    cat /etc/gentoo-release
-  elif [ "$dtype" == "mandriva" ]; then
-    cat /etc/mandriva-release
-  elif [ "$dtype" == "slackware" ]; then
-    cat /etc/slackware-version
-  else
-    if [ -s /etc/issue ]; then
-      cat /etc/issue
+    if [ $? -eq 0 ]; then
+        if [ -z "$to_remove" ]; then
+            echo "No packages selected for removal"
+        else
+            echo "Removing the following packages: $to_remove"
+            for pkg in $to_remove; do
+                pkg=$(echo $pkg | tr -d '"')
+                sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
+            done            
+        fi
     else
-      echo "Error: Unknown distribution"
-      exit 1
+        echo "User canceled the operation"
     fi
-  fi
+    sudo apt autoremove -y
 }
 
-# Move and go to the directory
-mvg ()
-{
-	if [ -d "$2" ];then
-		mv "$1" "$2" && cd "$2"
-	else
-		mv "$1" "$2"
-	fi
+function download_and_install_deb() {
+    cd $HOME/Downloads
+    declare -a urls=(
+    "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
+    "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
+    "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
+    "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
+    "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
+    "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
+    "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
+    )
+
+    # Create an array for whiptail
+    declare -a whiptail_array=()
+    for url in "${urls[@]}"; do
+        whiptail_array+=("$(basename "$url")" "Download and install" "OFF")
+    done
+
+    # Use whiptail to get user input
+    selected_packages=$(whiptail --title "Download and Install Packages" --checklist \
+    "Select the packages you want to download and install:" 30 90 20 \
+    "${whiptail_array[@]}" 3>&1 1>&2 2>&3)
+
+    # Proceed with download and installation for selected packages
+    for package in $selected_packages; do
+        package=$(echo $package | tr -d '"') # Remove surrounding quotes
+        for url in "${urls[@]}"; do
+            if [[ $(basename "$url") == "$package" ]]; then
+                file_name="$package"
+                wget "$url" -O "$file_name"
+                echo "Successfully downloaded $file_name"
+                sudo dpkg -i "$file_name" && sudo apt --fix-broken install -y
+                echo "Successfully installed $file_name"
+                rm "$file_name"
+            fi
+        done
+    done
+    sudo apt update -y && sudo apt --fix-broken install && sudo apt upgrade -y
+    cd $HOME
 }
 
-# Copy file with a progress bar
-cpp()
-{
-	set -e
-	strace -q -ewrite cp -- "${1}" "${2}" 2>&1 \
-	| awk '{
-	count += $NF
-	if (count % 10 == 0) {
-		percent = count / total_size * 100
-		printf "%3d%% [", percent
-		for (i=0;i<=percent;i++)
-			printf "="
-			printf ">"
-			for (i=percent;i<100;i++)
-				printf " "
-				printf "]\r"
-			}
-		}
-	END { print "" }' total_size="$(stat -c '%s' "${1}")" count=0
+function install_btop() {
+    if (whiptail --title "Install btop" --yesno "Do you want to download and install the latest version of btop?" 10 60); then
+        cd $HOME/Downloads
+        latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .assets[11].browser_download_url)
+        
+        # Check if the curl command was successful
+        if [ $? -ne 0 ]; then
+            whiptail --title "Error" --msgbox "Failed to fetch the latest release URL for btop." 10 60
+            return 1
+        fi
+        
+        btop_file_name=$(basename "$latest_release_btop")
+        wget "$latest_release_btop" -O "$btop_file_name"
+        
+        # Check if the wget command was successful
+        if [ $? -ne 0 ]; then
+            whiptail --title "Error" --msgbox "Failed to download the btop package." 10 60
+            return 1
+        fi
+        
+        echo "Successfully downloaded $btop_file_name"
+        
+        tar -xjf "$btop_file_name"
+        cd btop
+        ./install.sh
+        
+        # Check if the installation was successful
+        if [ $? -ne 0 ]; then
+            whiptail --title "Error" --msgbox "Failed to install btop." 10 60
+            return 1
+        fi
+        
+        echo "Successfully installed btop"
+        
+        cd $HOME/Downloads
+        rm -r "$btop_file_name"
+    else
+        whiptail --title "Cancelled" --msgbox "btop installation cancelled." 10 60
+    fi
+    sudo apt --fix-broken install -y
 }
+
+function install_firefox-browser() {
+    local response
+    response=$(whiptail --title "Install Firefox" --yesno "This will remove the existing Firefox installation as Firefox-ESR and Snap Firefox are incompatible with CAC use. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+
+    if [ $? -eq 0 ]; then
+        sudo apt remove firefox-esr -y && sudo apt purge firefox-esr -y
+        sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 2667CA5C
+        sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
+        cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
+        sudo rm ~/ubuntuzilla.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
+        sudo apt update -y && sudo apt upgrade -y
+        sudo apt install firefox-mozilla-build -y
+    else
+        echo "Installation canceled by user"
+    fi
+    sudo apt --fix-broken install -y
+}
+
+function install_thorium-browser() {
+    local response
+    response=$(whiptail --title "Install Thorium" --yesno "This will install Thorium web browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+
+    wget https://dl.thorium.rocks/debian/dists/stable/thorium.list && sudo mv thorium.list /etc/apt/sources.list.d/ && sudo apt update && sudo apt install thorium-browser -y
+    cd $HOME/Downloads
+    sudo dpkg -i thorium-browser_*.deb
+    rm thorium-browser_*.deb
+    cd $HOME
+    sudo apt --fix-broken install -y
+}
+
+function install_google-chrome() {
+    local response
+    response=$(whiptail --title "Install Google Chrome" --yesno "This will install Google Chrome. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+    cd $HOME/Downloads
+    curl https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome-stable_current_amd64.deb
+    sudo dpkg -i google-chrome-stable_current_amd64.deb
+    rm google-chrome-stable_current_amd64.deb
+    sudo apt --fix-broken install -y
+}
+
+function install_mullvad-browser () {
+    local response
+    response=$(whiptail --title "Install Mullvad" --yesno "This will install Mullvad VPN. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+    cd $HOME/Downloads
+    wget https://mullvad.net/en/download/browser/linux-x86_64/latest -O mullvad-browser-linux-x86_64*.tar.xz
+    tar -xvf mullvad-browser-linux-x86_64*.tar.xz
+    sudo mkdir -p /opt/mullvad-browser
+    sudo cp -r $HOME/Downloads/mullvad-browser/* /opt/mullvad-browser
+    sudo chown -R $(whoami):$(whoami) /opt/mullvad-browser
+    sudo updatedb
+    rm -r mullvad-browser-linux-x86_64*
+    sudo cat > /usr/share/applications/mullvad-browser.desktop <<EOF
+    [Desktop Entry]
+    Version=1.0
+    Type=Application
+    Name=Mullvad Browser
+    Comment=Private and secure web browser by Mullvad
+    Exec=/opt/mullvad-browser/Browser/start-mullvad-browser %u
+    Icon=/opt/mullvad-browser/Browser/browser/chrome/icons/default/default64.png
+    Terminal=false
+    Categories=Network;WebBrowser;
 EOF
-source ~/.bashrc
+    sudo chmod +x /usr/share/applications/mullvad-browser.desktop
+    whiptail --msgbox "Mullvad-browser installed successfully! Please make sure to logout or restart to use the browser." 10 60
+}
 
-### Configure fstab ###
-# Create the mount points
-sudo mkdir /mnt/Movies
-sudo mkdir /mnt/TV
-sudo mkdir /mnt/Disney\ Movies
-# Add the mount points to fstab
-echo "192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
-echo "192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0" | sudo tee -a /etc/fstab
-echo "192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0" | sudo tee -a /etc/fstab
-
-### Automate Security Updates ###
-#echo 'Unattended-Upgrade::Allowed-Origins {' | sudo tee /etc/apt/apt.conf.d/50unattended-upgrades
-#echo '        "${distro_id}:${distro_codename}-security";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-#echo '//      "${distro_id}:${distro_codename}-updates";' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-#echo '};' | sudo tee -a /etc/apt/apt.conf.d/50unattended-upgrades
-#echo 'APT::Periodic::Update-Package-Lists "1";' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades
-#echo 'APT::Periodic::Download-Upgradeable-Packages "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
-#echo 'APT::Periodic::AutocleanInterval "7";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
-#echo 'APT::Periodic::Unattended-Upgrade "1";' | sudo tee -a /etc/apt/apt.conf.d/20auto-upgrades
+function install_brave-browser () {
+    local response
+    response=$(whiptail --title "Install Brave" --yesno "This will install Brave browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+    sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+    echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+    sudo apt update -y && sudo apt install brave-browser -y
+    sudo apt --fix-broken install -y
+}
 
 
-### Configure Theme ###
-cd $HOME/Documents/
-# Clone the Layan-kde repository from GitHub to the current directory (Documents)
-git clone https://github.com/vinceliuice/Layan-kde.git
-cd Layan-kde
-./install.sh
-cd $HOME/Documents/
-# Clone the Tela-icon-theme repository from GitHub to the current directory (Documents) 
-git clone https://github.com/vinceliuice/Tela-icon-theme.git
-cd Tela-icon-theme
-# Install the Tela icon theme 
-./install.sh
-cd $HOME
+function update_firefox() {
+    local response
+    response=$(whiptail --title "Update Firefox" --yesno "This will update Firefox to the latest version. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
 
-### Custome keybindings ###
-# Create the custom keybindings file
-mkdir -p ~/.keybindings
-tee ~/.keybindings/custom.keybindings <<EOF
-[Data]
-DataCount=1
+    if [ $? -eq 0 ]; then
+        cd $HOME/Downloads
+        pkill firefox || true
+        URL="https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US"
+        wget -O firefox-latest.tar.bz2 "$URL"
+        tar xjf firefox-latest.tar.bz2
+        TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+        if [ -d "/opt/firefox" ]; then
+            sudo mv /opt/firefox /opt/firefox.bak.$TIMESTAMP
+        fi
+        sudo mkdir -p /opt/firefox
+        sudo cp -r $HOME/Downloads/firefox/* /opt/firefox
+        rm -rf $HOME/Downloads/firefox-latest.tar.bz2 $HOME/Downloads/firefox
+    else
+        echo "Update canceled by user"
+    fi
+}
 
-[Data_1]
-Comment=Comment
-DataCount=6
-Enabled=true
-Name=Custom-launches
-SystemGroup=0
-Type=ACTION_DATA_GROUP
+function install_cac () {
+    cd $HOME/Downloads
+    wget https://raw.githubusercontent.com/danalexanderbu/My_Repo/master/bash-projects/deb_cac_setup.sh && chmod +x deb_cac_setup.sh && sudo ./deb_cac_setup.sh
+}
 
-[Data_1Conditions]
-Comment=
-ConditionsCount=0
+function install_flatpak_and_bottles () {
+    local response
+    response=$(whiptail --title "Install Flatpak and Bottles" --yesno "This will install Flatpak and Bottles. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
 
-[Data_1_1]
-Comment=launches firefox
-Enabled=true
-Name=firefox
-Type=SIMPLE_ACTION_DATA
+    if [ $? -eq 0 ]; then
+        sudo apt install flatpak -y
+        sudo apt install plasma-discover-backend-flatpak -y
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+        flatpak install flathub com.usebottles.bottles -y
+    else
+        echo "Installation canceled by user"
+    fi
+    sudo apt --fix-broken install -y
+}
 
-[Data_1_1Actions]
-ActionsCount=1
+function install_protonGE () {
+    if ! command -v steam &> /dev/null; then
+        whiptail --title "Error" --msgbox "Steam is not installed. Please install Steam first." 8 50
+        return 1
+    fi
 
-[Data_1_1Actions0]
-CommandURL=firefox
-Type=COMMAND_URL
+    for cmd in curl jq steam; do
+        if ! command -v $cmd &> /dev/null; then
+            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
+            return 1
+        fi
+    done
 
-[Data_1_1Conditions]
-Comment=
-ConditionsCount=0
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Proton GE?" 8 50)
+    if [ $? -eq 0 ]; then
+        latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
+        file_name=$(basename "$latest_release_url_GE")
+        wget "$latest_release_url_GE" -O "$file_name"
+        folder_name=$(basename "$file_name" .tar.gz)
 
-[Data_1_1Triggers]
-Comment=Simple_action
-TriggersCount=1
+        # Check if the latest GE folder is already there
+        if [ -d "$HOME/.steam/steam/compatibilitytools.d/$folder_name" ]; then
+            whiptail --title "Info" --msgbox "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file." 8 50
+            rm "$file_name"
+        else
+            tar -xzvf "$file_name"
 
-[Data_1_1Triggers0]
-Key=Ctrl+Alt+F
-Type=SHORTCUT
-Uuid={0cf7902b-6d51-483d-b656-7fdb427ee224}
+            # Create directory if it doesn't exist
+            if [ ! -d "$HOME/.steam/steam/compatibilitytools.d" ]; then
+                mkdir "$HOME/.steam/steam/compatibilitytools.d"
+            fi
 
-[Data_1_2]
-Comment=launches brave browser
-Enabled=true
-Name=brave
-Type=SIMPLE_ACTION_DATA
+            mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
+            rm "$file_name"
+            whiptail --title "Info" --msgbox "Proton GE ($folder_name) has been installed successfully." 8 50
+        fi
+    fi
+}
 
-[Data_1_2Actions]
-ActionsCount=1
+function install_obsidian () {
+    for cmd in curl jq; do
+        if ! command -v $cmd &> /dev/null; then
+            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
+            return 1
+        fi
+    done
 
-[Data_1_2Actions0]
-CommandURL=brave-browser
-Type=COMMAND_URL
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Obsidian?" 8 50)
+    if [ $? -eq 0 ]; then
+        latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
+        wget "$latest_release_url_Obsidian"
+        file_name=$(basename "$latest_release_url_Obsidian")
+        sudo dpkg -i "$file_name"
+        rm "$file_name"
+        sudo apt --fix-broken install -y
+        whiptail --title "Info" --msgbox "Obsidian has been installed successfully." 8 50
+    fi
+    sudo apt --fix-broken install -y
+}
 
-[Data_1_2Conditions]
-Comment=
-ConditionsCount=0
+function install_virtualbox () {
+    for cmd in curl; do
+        if ! command -v $cmd &> /dev/null; then
+            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
+            return 1
+        fi
+    done
 
-[Data_1_2Triggers]
-Comment=Simple_action
-TriggersCount=1
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install VirtualBox?" 8 50)
+    if [ $? -eq 0 ]; then
+        cd $HOME/Downloads
+        # Add the Oracle VBox 2016 public key
+        if dpkg -l | grep virtualbox > /dev/null; then
+            response=$(whiptail --title "VirtualBox Already Installed" --yesno "VirtualBox is already installed. Do you want to continue and reinstall?" 8 50)
+            if [ $? -ne 0 ]; then
+                whiptail --title "Info" --msgbox "Exiting script." 8 50
+                return 0
+            fi
+        fi
+        curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/vbox.gpg
+        # Add the Oracle VBox public key
+        curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/oracle_vbox.gpg
+        # Add the VirtualBox repository to the system's APT source list
+        # "$(lsb_release -cs)" dynamically gets the codename of your Debian distribution.
+        echo "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
+        # Update the local package index to include the new VirtualBox repository
+        sudo apt update
+        # Install the Linux headers and dkms for the current running kernel
+        sudo apt install linux-headers-$(uname -r) dkms -y
+        # Install latest version of VirtualBox
+        VB_LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'VirtualBox-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        sudo apt install virtualbox-$VB_LATEST_VERSION -y
+        # Download the latest Oracle VM VirtualBox Extension Pack
+        LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'Oracle_VM_VirtualBox_Extension_Pack-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        wget "https://download.virtualbox.org/virtualbox/$LATEST_VERSION/Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack" -O "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
+        # Install the Oracle VM VirtualBox Extension Pack
+        sudo vboxmanage extpack install "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
+        # Remove the downloaded Oracle VM VirtualBox Extension Pack
+        rm "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
+        # Add the current user to the vboxusers group to grant permission to access the vboxdrv kernel module and Change the user’s group to vboxusers for the current session
+        sudo usermod -aG vboxusers $USER && newgrp vboxusers
+        whiptail --title "Info" --msgbox "Please log out and log back in to apply the group changes." 8 50
+    fi
+}
 
-[Data_1_2Triggers0]
-Key=Ctrl+Alt+B
-Type=SHORTCUT
-Uuid={743534d6-ed1e-43ad-a1ef-8c449dba2594}
 
-[Data_1_3]
-Comment=launches google chrome
-Enabled=true
-Name=google
-Type=SIMPLE_ACTION_DATA
+function install_python_packages () {
+    for cmd in python3 pip3; do
+        if ! command -v $cmd &> /dev/null; then
+            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
+            return 1
+        fi
+    done
 
-[Data_1_3Actions]
-ActionsCount=1
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install the Python packages?" 8 50)
+    if [ $? -eq 0 ]; then
+        packages=(
+            aiohttp
+            aiosignal
+            alpha-vantage
+            api
+            async-generator
+            async-timeout
+            attrs
+            beautifulsoup4
+            certifi
+            charset-normalizer
+            et
+            et-xmlfile
+            exceptiongroup
+            frozenlist
+            greenlet
+            h11
+            idna
+            multidict
+            nose
+            numpy
+            openpyxl
+            outcome
+            packaging
+            pandas
+            patsy
+            Pint
+            psycopg
+            psycopg2-binary
+            PySocks
+            python-dateutil
+            pytz
+            regex
+            requests
+            scipy
+            selenium
+            sniffio
+            sortedcontainers
+            soupsieve
+            SQLAlchemy
+            statsmodels
+            tk
+            tqdm
+            trio
+            trio-websocket
+            typing_extensions
+            tzdata
+            urllib3
+            var
+            workbook
+            wsproto
+            xlrd
+            xlutils
+            xlwt
+            yarl
+        )
+        # More efficient way to install python packages than for loop
+        pip3 install "${packages[@]}" --break-system-packages
+        whiptail --title "Info" --msgbox "Python packages installed successfully." 8 50
+    fi
+}
 
-[Data_1_3Actions0]
-CommandURL=google-chrome
-Type=COMMAND_URL
 
-[Data_1_3Conditions]
-Comment=
-ConditionsCount=0
+function install_git () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Git?" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
 
-[Data_1_3Triggers]
-Comment=Simple_action
-TriggersCount=1
+    #make git from source to enable openssl windows support on linux
+    set -eu
+    # Gather command line options
+    SKIPTESTS=
+    BUILDDIR=
+    SKIPINSTALL=
+    for i in "$@"; do 
+    case $i in 
+        -skiptests|--skip-tests) # Skip tests portion of the build
+        SKIPTESTS=YES
+        shift
+        ;;
+        -d=*|--build-dir=*) # Specify the directory to use for the build
+        BUILDDIR="${i#*=}"
+        shift
+        ;;
+        -skipinstall|--skip-install) # Skip dpkg install
+        SKIPINSTALL=YES
+        ;;
+        *)
+        #TODO Maybe define a help section?
+        ;;
+    esac
+    done
 
-[Data_1_3Triggers0]
-Key=Ctrl+Alt+G
-Type=SHORTCUT
-Uuid={57805a1d-97b5-4458-b94b-0249cb9b4fc2}
+    # Use the specified build directory, or create a unique temporary directory
+    set -x
+    BUILDDIR=${BUILDDIR:-$(mktemp -d)}
+    mkdir -p "${BUILDDIR}"
+    cd "${BUILDDIR}"
 
-[Data_1_4]
-Comment=brave incognito
-Enabled=true
-Name=brave-incognito
-Type=SIMPLE_ACTION_DATA
+    # Download the source tarball from GitHub
+    sudo apt update
+    sudo apt install curl jq -y
+    git_tarball_url="$(curl --retry 5 "https://api.github.com/repos/git/git/tags" | jq -r '.[0].tarball_url')"
+    curl -L --retry 5 "${git_tarball_url}" --output "git-source.tar.gz"
+    tar -xf "git-source.tar.gz" --strip 1
 
-[Data_1_4Actions]
-ActionsCount=1
+    # Source dependencies
+    # Don't use gnutls, this is the problem package.
+    if sudo apt remove --purge libcurl4-gnutls-dev -y; then
+    # Using apt-get for these commands, they're not supported with the apt alias on 14.04 (but they may be on later systems)
+    sudo apt autoremove -y
+    sudo apt autoclean
+    fi
+    # Meta-things for building on the end-user's machine
+    sudo apt install build-essential autoconf dh-autoreconf -y
+    # Things for the git itself
+    sudo apt install libcurl4-openssl-dev tcl-dev gettext asciidoc libexpat1-dev libz-dev -y
 
-[Data_1_4Actions0]
-CommandURL=brave-browser -incognito
-Type=COMMAND_URL
+    # Build it!
+    make configure
+    # --prefix=/usr
+    #    Set the prefix based on this decision tree: https://i.stack.imgur.com/BlpRb.png
+    #    Not OS related, is software, not from package manager, has dependencies, and built from source => /usr
+    # --with-openssl
+    #    Running ripgrep on configure shows that --with-openssl is set by default. Since this could change in the
+    #    future we do it explicitly
+    ./configure --prefix=/usr --with-openssl
+    make 
+    if [[ "${SKIPTESTS}" != "YES" ]]; then
+    make test
+    fi
 
-[Data_1_4Conditions]
-Comment=
-ConditionsCount=0
+    # Install
+    if [[ "${SKIPINSTALL}" != "YES" ]]; then
+    # If you have an apt managed version of git, remove it
+    if sudo apt remove --purge git -y; then
+        sudo apt autoremove -y
+        sudo apt autoclean
+    fi
+    # Install the version we just built
+    sudo make install #install-doc install-html install-info
+    echo "Make sure to refresh your shell!"
+    bash -c 'echo "$(which git) ($(git --version))"'
+    fi
+    cd $HOME
+    mkdir ~/.mycerts
+    cd ~/.mycerts
+    wget https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_DoD.zip -O unclass-certificates_pkcs7_DoD.zip
+    unzip unclass-certificates_pkcs7_DoD.zip
+    cd ~/.mycerts/certificates_pkcs7_v5_12_dod
+    openssl pkcs7 -print_certs -in certificates_pkcs7_v5_12_dod_pem.p7b -out dod_cert_bundle.pem
+    chmod 600 ~/.mycerts/certificates_pkcs7_v5_12_dod/dod_cert_bundle.pem
+    cd $HOME
+    chmod 700 ~/.mycerts
+    # Prompt the user for their name and email
+    local name
+    local email
+    name=$(whiptail --inputbox "Please enter your name:" 8 50 --title "User Name" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus -ne 0 ]; then
+        return
+    fi
+    email=$(whiptail --inputbox "Please enter your email:" 8 50 --title "User Email" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus -ne 0 ]; then
+        return
+    fi
+    git config --global core.editor "code"
+    #git config --global http.sslCAInfo ~/.mycerts/dod_cert_bundle.pem
+    git config --global http.sslverify false
+    git config --global http.sslverify true
+    # Define the path to the Documents directory
+    DOCUMENTS_DIR="$HOME/Documents"
+    # Go to the Documents directory
+    cd "$DOCUMENTS_DIR" || { echo "Failed to switch to the Documents directory"; exit 1; }
+    # Check if SSH Key already exists
+    local ssh_key_path=~/.ssh/github_ssh_key.pub
+    local ssh_key
+    if [ ! -f "$ssh_key_path" ]; then
+        # 1. Generate SSH Key (without passphrase for automation; you can modify as needed)
+        ssh-keygen -t ed25519 -C "danalexanderbu@gmail.com" -f ~/.ssh/github_ssh_key || { echo "SSH key generation failed"; exit 1; }
+        ssh_key=$(cat "$ssh_key_path")
+        whiptail --msgbox "Please add the following SSH key to your GitHub account:\n\n$ssh_key" 10 60
+    else
+        ssh_key=$(cat "$ssh_key_path")
+        whiptail --msgbox "SSH key already exists:\n\n$ssh_key" 10 60
+    fi
+    # 2. Start the ssh-agent in the background and add the SSH key
+    eval "$(ssh-agent -s)"
+    ssh-add ~/.ssh/github_ssh_key || { echo "Failed to add SSH key to agent"; exit 1; }
+    # Update or create SSH config to use the specific key for GitHub
+    if [ ! -f ~/.ssh/config ]; then
+        touch ~/.ssh/config
+    fi
+    echo -e "Host github.com\n  IdentityFile ~/.ssh/github_ssh_key" >> ~/.ssh/config
+    # Inform user to continue with cloning
+    echo "You can now clone your repositories."
+    # Clone the repositories into their respective folders
+    git clone git@github.com:danalexanderbu/personal.git personal || { echo "Failed to clone personal"; exit 1; }
+    git clone git@github.com:danalexanderbu/My_Repo.git My_Repo || { echo "Failed to clone My_Repo"; exit 1; }
+    cd $HOME
+}
 
-[Data_1_4Triggers]
-Comment=Simple_action
-TriggersCount=1
+function install_theme () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to install themes?" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
 
-[Data_1_4Triggers0]
-Key=Ctrl+Alt+I
-Type=SHORTCUT
-Uuid={effa10da-83a8-45ae-8da0-3ac20b5ed258}
+    for cmd in git; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "$cmd could not be found. Please install it and try again."
+            return 1
+        fi
+    done
 
-[Data_1_5]
-Comment=launches vscode
-Enabled=true
-Name=vscode
-Type=SIMPLE_ACTION_DATA
+    cd $HOME/Documents/
 
-[Data_1_5Actions]
-ActionsCount=1
+    # Clone the Layan-kde repository from GitHub to the current directory (Documents)
+    git clone https://github.com/vinceliuice/Layan-kde.git
+    cd Layan-kde
+    ./install.sh
+    cd $HOME/Documents/
 
-[Data_1_5Actions0]
-CommandURL=code
-Type=COMMAND_URL
+    # Clone the Tela-icon-theme repository from GitHub to the current directory (Documents) 
+    git clone https://github.com/vinceliuice/Tela-icon-theme.git
+    cd Tela-icon-theme
+    # Install the Tela icon theme 
+    ./install.sh
 
-[Data_1_5Conditions]
-Comment=
-ConditionsCount=0
+    git clone https://github.com/ryanoasis/nerd-fonts.git
+    cd nerd-fonts
+    ./install.sh
+    # update font cache
+    sudo fc-cache -f -v
+    cd $HOME
 
-[Data_1_5Triggers]
-Comment=Simple_action
-TriggersCount=1
+    whiptail --msgbox "Themes installed successfully! Please make sure to apply them through your desktop environment settings." 10 60
+}
 
-[Data_1_5Triggers0]
-Key=Ctrl+Alt+V
-Type=SHORTCUT
-Uuid={ecc50121-e337-4738-b7ba-3f381f521d76}
+function configure_bashrc () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to configure your .bashrc file to be FREAKING AWESOME????" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
 
-[Data_1_6]
-Comment=launches kate
-Enabled=true
-Name=kate
-Type=SIMPLE_ACTION_DATA
+    # Backup the existing .bashrc
+    cp ~/.bashrc ~/.bashrc_backup
+    # Append the new content to .bashrc using tee
+    ### My custom .bashrc file ###
+    cat << 'EOF' | tee -a ~/.bashrc > /dev/null
+    # Don't put duplicate lines in the history and do not add lines that start with a space
+    export HISTCONTROL=erasedups:ignoredups:ignorespace
 
-[Data_1_6Actions]
-ActionsCount=1
+    # Color for manpages in less makes manpages a little easier to read
+    export LESS_TERMCAP_mb=$'\E[01;31m'
+    export LESS_TERMCAP_md=$'\E[01;31m'
+    export LESS_TERMCAP_me=$'\E[0m'
+    export LESS_TERMCAP_se=$'\E[0m'
+    export LESS_TERMCAP_so=$'\E[01;44;33m'
+    export LESS_TERMCAP_ue=$'\E[0m'
+    export LESS_TERMCAP_us=$'\E[01;32m'
 
-[Data_1_6Actions0]
-CommandURL=kate
-Type=COMMAND_URL
+    #My custom aliases
+    alias uu="sudo apt update && sudo apt upgrade"
 
-[Data_1_6Conditions]
-Comment=
-ConditionsCount=0
+    # Alias's for multiple directory listing commands
+    alias la='ls -Alh' # show hidden files
+    alias ls='ls -aFh --color=always' # add colors and file type extensions
+    alias lx='ls -lXBh' # sort by extension
+    alias lk='ls -lSrh' # sort by size
+    alias lc='ls -lcrh' # sort by change time
+    alias lu='ls -lurh' # sort by access time
+    alias lr='ls -lRh' # recursive ls
+    alias lt='ls -ltrh' # sort by date
+    alias lm='ls -alh |more' # pipe through 'more'
+    alias lw='ls -xAh' # wide listing format
+    alias ll='ls -Fls' # long listing format
+    alias labc='ls -lap' #alphabetical sort
+    alias lf="ls -l | egrep -v '^d'" # files only
+    alias ldir="ls -l | egrep '^d'" # directories only
 
-[Data_1_6Triggers]
-Comment=Simple_action
-TriggersCount=1
+    # Change directory aliases
+    alias ..='cd ..'
+    alias ...='cd ../..'
+    alias ....='cd ../../..'
+    alias .....='cd ../../../..'
 
-[Data_1_6Triggers0]
-Key=Ctrl+Alt+K
-Type=SHORTCUT
-Uuid={c36dfafa-11aa-4311-a19e-fcd2aa07d79f}
+    # Search command line history
+    alias h="history | grep "
 
-[Main]
-AllowMerge=true
-ImportId=69
-Version=2
+    # Search files in the current folder
+    alias f="find . | grep "
+
+    # Count all files (recursively) in the current folder
+    alias countfiles="for t in files links directories; do echo \`find . -type \${t:0:1} | wc -l\` \$t; done 2> /dev/null"
+
+    # Show open ports
+    alias openports='netstat -nape --inet'
+
+    # Alias's for archives
+    alias mktar='tar -cvf'
+    alias mkbz2='tar -cvjf'
+    alias mkgz='tar -cvzf'
+    alias untar='tar -xvf'
+    alias unbz2='tar -xvjf'
+    alias ungz='tar -xvzf'
+
+    # Show all logs in /var/log
+    alias logs="sudo find /var/log -type f -exec file {} \; | grep 'text' | cut -d' ' -f1 | sed -e's/:$//g' | grep -v '[0-9]$' | xargs tail -f"
+
+    # Extracts any archive(s) (if unp isn't installed)
+    extract () {
+        for archive in "$@"; do
+            if [ -f "$archive" ] ; then
+                case $archive in
+                    *.tar.bz2)   tar xvjf $archive    ;;
+                    *.tar.gz)    tar xvzf $archive    ;;
+                    *.bz2)       bunzip2 $archive     ;;
+                    *.rar)       rar x $archive       ;;
+                    *.gz)        gunzip $archive      ;;
+                    *.tar)       tar xvf $archive     ;;
+                    *.tbz2)      tar xvjf $archive    ;;
+                    *.tgz)       tar xvzf $archive    ;;
+                    *.zip)       unzip $archive       ;;
+                    *.Z)         uncompress $archive  ;;
+                    *.7z)        7z x $archive        ;;
+                    *)           echo "don't know how to extract '$archive'..." ;;
+                esac
+            else
+                echo "'$archive' is not a valid file!"
+            fi
+        done
+    }
+
+    # Show current network information
+    netinfo ()
+    {
+        echo "--------------- Network Information ---------------"
+        /sbin/ifconfig | awk '/inet / {print "IP Address: " $2}'
+        echo ""
+        /sbin/ifconfig | awk '/broadcast / {print "Broadcast Address: " $4}'
+        echo ""
+        /sbin/ifconfig | awk '/ether / {print "MAC Address: " $2}'
+        echo "---------------------------------------------------"
+    }
+
+    # IP address lookup
+    alias whatismyip="whatsmyip"
+    function whatsmyip ()
+    {
+        # Dumps a list of all IP addresses for every device
+        # /sbin/ifconfig |grep -B1 "inet addr" |awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' |awk -F: '{ print $1 ": " $3 }';
+        
+        ### Old commands
+        # Internal IP Lookup
+        #echo -n "Internal IP: " ; /sbin/ifconfig eth0 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}'
+    #
+    #	# External IP Lookup
+        #echo -n "External IP: " ; wget http://smart-ip.net/myip -O - -q
+        
+        # Internal IP Lookup.
+        if [ -e /sbin/ip ];
+        then
+            echo -n "Internal IP: " ; /sbin/ip addr show enp6s0 | grep "inet " | awk -F: '{print $1}' | awk '{print $2}'
+        else
+            echo -n "Internal IP: " ; /sbin/ifconfig enp6s0 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
+        fi
+
+        # External IP Lookup 
+        echo -n "External IP: " ; curl -s ifconfig.me
+    }
+
+    # Show the current distribution
+    distribution() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$ID"
+    else
+        echo "unknown"
+    fi
+    }
+
+    # Show the current version of the operating system
+    ver() {
+    local dtype
+    dtype=$(distribution)
+
+    if [ "$dtype" == "rhel" ] || [ "$dtype" == "centos" ]; then
+        cat /etc/redhat-release && uname -a
+    elif [ "$dtype" == "suse" ] || [ "$dtype" == "opensuse" ]; then
+        cat /etc/os-release # SuSE and openSUSE use os-release
+    elif [ "$dtype" == "debian" ] || [ "$dtype" == "ubuntu" ]; then
+        lsb_release -a
+    elif [ "$dtype" == "gentoo" ]; then
+        cat /etc/gentoo-release
+    elif [ "$dtype" == "mandriva" ]; then
+        cat /etc/mandriva-release
+    elif [ "$dtype" == "slackware" ]; then
+        cat /etc/slackware-version
+    else
+        if [ -s /etc/issue ]; then
+        cat /etc/issue
+        else
+        echo "Error: Unknown distribution"
+        exit 1
+        fi
+    fi
+    }
+
+    # Move and go to the directory
+    mvg ()
+    {
+        if [ -d "$2" ];then
+            mv "$1" "$2" && cd "$2"
+        else
+            mv "$1" "$2"
+        fi
+    }
+
+    # Copy file with a progress bar
+    cpp()
+    {
+        set -e
+        strace -q -ewrite cp -- "${1}" "${2}" 2>&1 \
+        | awk '{
+        count += $NF
+        if (count % 10 == 0) {
+            percent = count / total_size * 100
+            printf "%3d%% [", percent
+            for (i=0;i<=percent;i++)
+                printf "="
+                printf ">"
+                for (i=percent;i<100;i++)
+                    printf " "
+                    printf "]\r"
+                }
+            }
+        END { print "" }' total_size="$(stat -c '%s' "${1}")" count=0
+    }
 EOF
+}
 
-echo "All tasks completed successfully."
+function configure_hotkeys () {
+    source ~/.bashrc
+    mkdir -p ~/.keybindings
+    tee ~/.keybindings/custom.keybindings <<EOF
+    [Data]
+    DataCount=1
+
+    [Data_1]
+    Comment=Comment
+    DataCount=6
+    Enabled=true
+    Name=Custom-launches
+    SystemGroup=0
+    Type=ACTION_DATA_GROUP
+
+    [Data_1Conditions]
+    Comment=
+    ConditionsCount=0
+
+    [Data_1_1]
+    Comment=launches firefox
+    Enabled=true
+    Name=firefox
+    Type=SIMPLE_ACTION_DATA
+
+    [Data_1_1Actions]
+    ActionsCount=1
+
+    [Data_1_1Actions0]
+    CommandURL=firefox
+    Type=COMMAND_URL
+
+    [Data_1_1Conditions]
+    Comment=
+    ConditionsCount=0
+
+    [Data_1_1Triggers]
+    Comment=Simple_action
+    TriggersCount=1
+
+    [Data_1_1Triggers0]
+    Key=Ctrl+Alt+F
+    Type=SHORTCUT
+    Uuid={0cf7902b-6d51-483d-b656-7fdb427ee224}
+
+    [Data_1_2]
+    Comment=launches brave browser
+    Enabled=true
+    Name=brave
+    Type=SIMPLE_ACTION_DATA
+
+    [Data_1_2Actions]
+    ActionsCount=1
+
+    [Data_1_2Actions0]
+    CommandURL=brave-browser
+    Type=COMMAND_URL
+
+    [Data_1_2Conditions]
+    Comment=
+    ConditionsCount=0
+
+    [Data_1_2Triggers]
+    Comment=Simple_action
+    TriggersCount=1
+
+    [Data_1_2Triggers0]
+    Key=Ctrl+Alt+B
+    Type=SHORTCUT
+    Uuid={743534d6-ed1e-43ad-a1ef-8c449dba2594}
+
+    [Data_1_3]
+    Comment=launches google chrome
+    Enabled=true
+    Name=google
+    Type=SIMPLE_ACTION_DATA
+
+    [Data_1_3Actions]
+    ActionsCount=1
+
+    [Data_1_3Actions0]
+    CommandURL=google-chrome
+    Type=COMMAND_URL
+
+    [Data_1_3Conditions]
+    Comment=
+    ConditionsCount=0
+
+    [Data_1_3Triggers]
+    Comment=Simple_action
+    TriggersCount=1
+
+    [Data_1_3Triggers0]
+    Key=Ctrl+Alt+G
+    Type=SHORTCUT
+    Uuid={57805a1d-97b5-4458-b94b-0249cb9b4fc2}
+
+    [Data_1_4]
+    Comment=brave incognito
+    Enabled=true
+    Name=brave-incognito
+    Type=SIMPLE_ACTION_DATA
+
+    [Data_1_4Actions]
+    ActionsCount=1
+
+    [Data_1_4Actions0]
+    CommandURL=brave-browser -incognito
+    Type=COMMAND_URL
+
+    [Data_1_4Conditions]
+    Comment=
+    ConditionsCount=0
+
+    [Data_1_4Triggers]
+    Comment=Simple_action
+    TriggersCount=1
+
+    [Data_1_4Triggers0]
+    Key=Ctrl+Alt+I
+    Type=SHORTCUT
+    Uuid={effa10da-83a8-45ae-8da0-3ac20b5ed258}
+
+    [Data_1_5]
+    Comment=launches vscode
+    Enabled=true
+    Name=vscode
+    Type=SIMPLE_ACTION_DATA
+
+    [Data_1_5Actions]
+    ActionsCount=1
+
+    [Data_1_5Actions0]
+    CommandURL=code
+    Type=COMMAND_URL
+
+    [Data_1_5Conditions]
+    Comment=
+    ConditionsCount=0
+
+    [Data_1_5Triggers]
+    Comment=Simple_action
+    TriggersCount=1
+
+    [Data_1_5Triggers0]
+    Key=Ctrl+Alt+V
+    Type=SHORTCUT
+    Uuid={ecc50121-e337-4738-b7ba-3f381f521d76}
+
+    [Data_1_6]
+    Comment=launches kate
+    Enabled=true
+    Name=kate
+    Type=SIMPLE_ACTION_DATA
+
+    [Data_1_6Actions]
+    ActionsCount=1
+
+    [Data_1_6Actions0]
+    CommandURL=kate
+    Type=COMMAND_URL
+
+    [Data_1_6Conditions]
+    Comment=
+    ConditionsCount=0
+
+    [Data_1_6Triggers]
+    Comment=Simple_action
+    TriggersCount=1
+
+    [Data_1_6Triggers0]
+    Key=Ctrl+Alt+K
+    Type=SHORTCUT
+    Uuid={c36dfafa-11aa-4311-a19e-fcd2aa07d79f}
+
+    [Main]
+    AllowMerge=true
+    ImportId=69
+    Version=2
+EOF
+}
+
+function enable_UFW () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to enable UFW and configure rules for Git Steam and Unraid?" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
+
+    sudo ufw enable
+    #Allow internet
+    sudo ufw allow 80
+    sudo ufw allow 443
+    #Allow Git
+    sudo ufw allow 22
+    sudo ufw allow 9418
+    #Allow unraid
+    sudo ufw allow from 192.168.1.133 to any port 80
+    sudo ufw allow from 192.168.1.133 to any port 443
+    sudo ufw allow from 192.168.1.133 to any port 137
+    sudo ufw allow from 192.168.1.133 to any port 445
+    #Allow steam
+    sudo ufw allow 27000:27050/udp
+    sudo ufw allow 27000:27050/tcp
+    sudo ufw allow 27015:27030/udp
+    sudo ufw allow 27036:27037/tcp
+    sudo ufw allow 27031:27036/udp
+    sudo ufw allow 4380/udp
+    sudo ufw reload
+}
+
+#error handling when a function fails
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOGFILE="install_log_${TIMESTAMP}.txt"
+ERRORFILE="errors_${TIMESTAMP}.txt"
+function function_status() {
+    local func_name="$1"
+    if $func_name; then
+        echo "$func_name completed successfully." | tee -a $LOGFILE
+    else
+        echo "Error executing $func_name." | tee -a $LOGFILE
+        return 1
+    fi
+}
+
+while true; do
+    choice=$(whiptail --title "Debian Configuration" --menu "Choose an option" 25 78 16 \
+        "1" "Blacklist Nouveau" \
+        "2" "Add Repositories" \
+        "3" "Install Packages" \
+        "4" "Remove Packages" \
+        "5" "Download and Install .deb" \
+        "6" "Install btop" \
+        "7" "Install Firefox" \
+        "8" "Install Brave" \
+        "9" "Install Chrome" \
+        "10" "Install Mullvad" \
+        "11" "Install Thorium" \
+        "12" "Update Firefox" \
+        "13" "Install Flatpak and Bottles" \
+        "14" "Install ProtonGE" \
+        "15" "Install Obsidian" \
+        "16" "Install VirtualBox" \
+        "17" "Install Python Packages" \
+        "18" "Install Git" \
+        "19" "Install Theme" \
+        "20" "Configure .bashrc" \
+        "21" "Enable UFW" \
+        "22" "Exit" 3>&1 1>&2 2>&3)
+    
+    case $choice in
+        1) function_status blacklist_nouveau;;
+        2) function_status add_repositories;;
+        3) function_status apt_installs;;
+        4) function_status remove_packages;;
+        5) function_status download_and_install_deb;;
+        6) function_status install_btop;;
+        7) function_status install_firefox-browser;;
+        8) function_status install_brave-browser;;
+        9) function_status install_google-chrome;;
+        10) function_status install_mullvad-browser;;
+        11) function_status install_thorium-browser;;
+        12) function_status update_firefox;;
+        13) function_status install_flatpak_and_bottles;;
+        14) function_status install_protonGE;;
+        15) function_status install_obsidian;;
+        16) function_status install_virtualbox;;
+        17) function_status instal_python_packages;;
+        18) function_status install_git;;
+        19) function_status install_theme;;
+        20) function_status configure_bashrc;;
+        21) function_status enable_UFW;;
+        22) echo "Exiting script."; break;;
+        *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
+    esac
+    # Check if the return code is 1 (Cancel button was pressed)
+    if [ $? -eq 1 ]; then
+        echo "Installation canceled by user"
+        return
+    fi
+done
+
+awk '/Error executing/ {print $0}' $LOGFILE > $ERRORFILE
+
+echo "Script execution completed. Check $LOGFILE for details."
+if [[ -s $ERRORFILE ]]; then
+    echo "Some errors were encountered. Check $ERRORFILE for details."
+else
+    echo "No errors were encountered."
+fi
