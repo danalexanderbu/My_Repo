@@ -319,10 +319,22 @@ function install_mullvad-browser () {
     wget https://mullvad.net/en/download/browser/linux-x86_64/latest -O mullvad-browser-linux-x86_64*.tar.xz
     tar -xvf mullvad-browser-linux-x86_64*.tar.xz
     sudo mkdir -p /opt/mullvad-browser
-    sudo cp -r $HOME/Downloads/mullvad-browser-linux-x86_64/* /opt/mullvad-browser
+    sudo cp -r $HOME/Downloads/mullvad-browser/* /opt/mullvad-browser
     sudo chown -R daniel:daniel mullvad-browser
-    cd $HOME/Desktop
     rm -r mullvad-browser-linux-x86_64*
+    sudo cat > /usr/share/applications/mullvad-browser.desktop <<EOF
+    [Desktop Entry]
+    Version=1.0
+    Type=Application
+    Name=Mullvad Browser
+    Comment=Private and secure web browser by Mullvad
+    Exec=/opt/mullvad-browser/Browser/start-mullvad-browser %u
+    Icon=/opt/mullvad-browser/Browser/browser/chrome/icons/default/default64.png
+    Terminal=false
+    Categories=Network;WebBrowser;
+EOF
+    sudo chmod +x /usr/share/applications/mullvad-browser.desktop
+    whiptail --msgbox "Mullvad-browser installed successfully! Please make sure to logout or restart to use the browser." 10 60
 }
 
 function install_brave-browser () {
