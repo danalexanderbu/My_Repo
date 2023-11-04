@@ -73,6 +73,7 @@ function apt_installs() {
         "curl" "Command line tool for transferring data with URL syntax" ON \
         "lsb-release" "Linux Standard Base version reporting utility" ON \
         "unattended-upgrades" "Automatic installation of security upgrades" ON \
+        "mlocate" "Faster locate using database" ON \
         "kwalletmanager" "KDE wallet manager" OFF \
         "plasma-discover" "KDE Discover software store" OFF \
         "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF
@@ -320,7 +321,8 @@ function install_mullvad-browser () {
     tar -xvf mullvad-browser-linux-x86_64*.tar.xz
     sudo mkdir -p /opt/mullvad-browser
     sudo cp -r $HOME/Downloads/mullvad-browser/* /opt/mullvad-browser
-    sudo chown -R daniel:daniel mullvad-browser
+    sudo chown -R $(whoami):$(whoami) /opt/mullvad-browser
+    sudo updatedb
     rm -r mullvad-browser-linux-x86_64*
     sudo cat > /usr/share/applications/mullvad-browser.desktop <<EOF
     [Desktop Entry]
