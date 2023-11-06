@@ -113,6 +113,35 @@ if [ $? -eq 0 ] && [ ! -z "$selected_packages" ]; then
 fi
 }
 
+function_awesomewm() {
+    local response
+    response=$(whiptail --title "Install AwesomeWM" --yesno "This will install AwesomeWM. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+    sudo apt install awesome nitrogen compton dmenu -y
+    sudo mkdir -p $HOME/.config/awesome
+    sudo cp /etc/xdg/awesome/rc.lua $HOME/.config/awesome/
+    git clone https://gitlab.com/dwt1/wallpapers.git $HOME/.config/wallpapers
+    #set nitrogen and compton to autostart at end of rc.lua
+    sudo cat >> $HOME/.config/awesome/rc.lua <<EOF
+    -- Autostart Applications
+    awful.spawn.with_shell("nitrogen --restore")
+    awful.spawn.with_shell("compton")
+EOF
+    #set dmenu to mod+r 
+    sudo sed -i 's/awful.key({ modkey },            "r",     function () awful.screen.focused().mypromptbox:run() end,/awful.key({ modkey },            "r",     function () awful.spawn("dmenu_run") end,/g' $HOME/.config/awesome/rc.lua
+    sudo sed -i 's/{description = "run prompt", group = "launcher"}),/{description = "run dmenu", group = "launcher"}),/g' $HOME/.config/awesome/rc.lua
+    #set wallpaper to nitrogen for all 3 screens
+    nitrogen --set-zommed $HOME/.config/wallpapers/0002.jpg --head=0 --save
+    nitrogen --set-zommed $HOME/.config/wallpapers/0229.jpg --head=1 --save
+    nitrogen --set-zommed $HOME/.config/wallpapers/0276.jpg --head=2 --save
+    #add gaps to windows
+    sudo cat >> $HOME/.config/awesome/rc.lua <<EOF
+    -- Gaps
+    beautiful.useless_gap = 10
+
+
+
+}
+
 function remove_packages() {
     local installed_packages=(
         "libpcsclite1" "PC/SC Lite shared library" OFF \
@@ -140,6 +169,10 @@ function remove_packages() {
         "ebtables" "Ethernet bridge frame table administration" OFF \
         "aria2" "High speed download utility" OFF \
         "thunderbird" "Email, news and chat client from Mozilla" OFF \
+        "awesome" "highly configurable, next generation framework window manager for Debian 12" OFF \
+        "nitrogen" "wallpaper browser and changing utility for Debian 12" OFF \
+        "dmenu" "dynamic menu for Debian 12" OFF \
+        "compton" "X11 compositor for Debian 12" OFF \
         "ufw" "Uncomplicated Firewall" OFF \
         "timeshift" "System restore tool for Linux" OFF \
         "nfs-common" "NFS support files common to client and server" OFF \
