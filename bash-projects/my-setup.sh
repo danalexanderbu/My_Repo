@@ -115,7 +115,7 @@ fi
 
 function_awesomewm() {
     local response
-    response=$(whiptail --title "Install AwesomeWM" --yesno "This will install AwesomeWM. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+    response=$(whiptail --title "Install AwesomeWM" --yesno "This will install AwesomeWM Compton Nitrogen and Dmenu. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
     sudo apt install awesome nitrogen compton dmenu -y
     sudo mkdir -p $HOME/.config/awesome
     sudo cp /etc/xdg/awesome/rc.lua $HOME/.config/awesome/
