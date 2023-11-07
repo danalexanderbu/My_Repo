@@ -46,7 +46,7 @@ function apt_installs() {
         "libpcsc-perl" "Perl bindings for PC/SC" ON \
         "pcsc-tools" "Tools for testing PC/SC drivers and applications" ON \
         "libnss3-tools" "Network Security Service tools" ON \
-        "ffmpeg" "Multimedia player, server and encoder" ON \
+        "ffmpeg" "Multimedia player, server and encoder" OFF \
         "obs-studio" "Open broadcaster software studio" ON \
         "openssl" "Secure Sockets Layer toolkit" ON \
         "qbittorrent" "Free and reliable P2P BitTorrent client" ON \
@@ -116,15 +116,134 @@ fi
 function_awesomewm() {
     local response
     response=$(whiptail --title "Install AwesomeWM" --yesno "This will install AwesomeWM Compton Nitrogen and Dmenu. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-    sudo apt install awesome nitrogen compton dmenu -y
+    sudo apt install awesome nitrogen compton dmenu thunar -y
+    #make compton conf
+    sudo cat > $HOME/.config/compton.conf <<EOF
+# Shadow
+shadow = true;
+no-dnd-shadow = true;
+no-dock-shadow = true;
+clear-shadow = true;
+shadow-radius = 7;
+shadow-offset-x = -7;
+shadow-offset-y = -7;
+# shadow-opacity = 0.7;
+# shadow-red = 0.0;
+# shadow-green = 0.0;
+# shadow-blue = 0.0;
+shadow-exclude = [
+        "name = 'Notification'",
+        "class_g = 'Conky'",
+        "class_g ?= 'Notify-osd'",
+        "class_g = 'Cairo-clock'",
+        "_GTK_FRAME_EXTENTS@:c"
+];
+# shadow-exclude = "n:e:Notification";
+# shadow-exclude-reg = "x10+0+0";
+# xinerama-shadow-crop = true;
+
+# Opacity
+menu-opacity = 0.8;
+inactive-opacity = 0.8;
+# active-opacity = 0.8;
+frame-opacity = 0.7;
+inactive-opacity-override = false;
+alpha-step = 0.06;
+# inactive-dim = 0.2;
+# inactive-dim-fixed = true;
+# blur-background = true;
+# blur-background-frame = true;
+blur-kern = "3x3box";
+# blur-kern = "5,5,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1";
+# blur-background-fixed = true;
+blur-background-exclude = [
+        "window_type = 'dock'",
+        "window_type = 'desktop'",
+        "_GTK_FRAME_EXTENTS@:c"
+];
+# opacity-rule = [ "80:class_g = 'URxvt'" ];
+
+# Fading
+fading = true;
+# fade-delta = 30;
+fade-in-step = 0.03;
+fade-out-step = 0.03;
+# no-fading-openclose = true;
+# no-fading-destroyed-argb = true;
+fade-exclude = [ ];
+
+# Other
+backend = "xrender";
+mark-wmwin-focused = true;
+mark-ovredir-focused = true;
+# use-ewmh-active-win = true;
+detect-rounded-corners = true;
+detect-client-opacity = true;
+refresh-rate = 0;
+vsync = "none";
+dbe = false;
+paint-on-overlay = true;
+# sw-opti = true;
+# unredir-if-possible = true;
+# unredir-if-possible-delay = 5000;
+# unredir-if-possible-exclude = [ ];
+focus-exclude = [ "class_g = 'Cairo-clock'" ];
+detect-transient = true;
+detect-client-leader = true;
+invert-color-include = [ ];
+# resize-damage = 1;
+
+# GLX backend
+# glx-no-stencil = true;
+glx-copy-from-front = false;
+# glx-use-copysubbuffermesa = true;
+# glx-no-rebind-pixmap = true;
+glx-swap-method = "undefined";
+# glx-use-gpushader4 = true;
+# xrender-sync = true;
+# xrender-sync-fence = true;
+
+# Window type settings
+wintypes:
+{
+  tooltip = { fade = true; shadow = true; opacity = 0.75; focus = true; };
+};
+EOF
+    # Disable KWin compositing on startup
+    kwriteconfig5 --file kwinrc --group Compositing --key Enabled false
+    # Wait a bit for KWin to fully disable compositing
+    sleep 2
+    # Replace KWin with Compton
+    compton --config path/to/your/compton.conf --daemon
     sudo mkdir -p $HOME/.config/awesome
     sudo cp /etc/xdg/awesome/rc.lua $HOME/.config/awesome/
     git clone https://gitlab.com/dwt1/wallpapers.git $HOME/.config/wallpapers
-    #set nitrogen and compton to autostart at end of rc.lua
+    #add volume control
+    sudo cat >> $HOME/.config/awesome/rc.lua <<EOF
+    -- Volume Control
+    local volume_widget = require('awesome-wm-widgets.volume-widget.volume')
+    -- Autostart applications
+    awful.spawn.with_shell("compton --daemon")
+    -- Rest of the configuration
+    ...
+    s.mytasklist, -- Middle widget
+    { -- Right widgets
+        layout = wibox.layout.fixed.horizontal,
+        ...
+        -- default
+        volume_widget(),
+        -- customized
+        volume_widget{
+            widget_type = 'arc'
+        },
+        ...
+}
+EOF
+    #set autostart applications
     sudo cat >> $HOME/.config/awesome/rc.lua <<EOF
     -- Autostart Applications
+    awful.spawn.with_shell("compton --config $HOME/.config/compton.conf --daemon")
     awful.spawn.with_shell("nitrogen --restore")
-    awful.spawn.with_shell("compton")
 EOF
     #set dmenu to mod+r 
     sudo sed -i 's/awful.key({ modkey },            "r",     function () awful.screen.focused().mypromptbox:run() end,/awful.key({ modkey },            "r",     function () awful.spawn("dmenu_run") end,/g' $HOME/.config/awesome/rc.lua
@@ -137,8 +256,7 @@ EOF
     sudo cat >> $HOME/.config/awesome/rc.lua <<EOF
     -- Gaps
     beautiful.useless_gap = 10
-
-
+EOF
 
 }
 
