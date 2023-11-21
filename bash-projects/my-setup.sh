@@ -67,12 +67,18 @@ function apt_installs() {
         "aria2" "High speed download utility" ON \
         "thunderbird" "Email, news and chat client from Mozilla" ON \
         "ufw" "Uncomplicated Firewall" ON \
+        "jq" "Command-line JSON processor" ON \
+        "awesome" "highly configurable, next generation framework window manager for Debian 12" ON \     
+        "nitrogen" "wallpaper browser and changing utility for Debian 12" ON \
+        "compton" "X11 compositor for Debian 12" ON \
+        "dmenu" "dynamic menu for Debian 12" ON \
         "timeshift" "System restore tool for Linux" ON \
         "nfs-common" "NFS support files common to client and server" ON \
         "neofetch" "System information tool" ON \
         "curl" "Command line tool for transferring data with URL syntax" ON \
         "lsb-release" "Linux Standard Base version reporting utility" ON \
         "unattended-upgrades" "Automatic installation of security upgrades" ON \
+        "software-properties-common" "Software properties common utilities" ON \
         "mlocate" "Faster locate using database" ON \
         "kwalletmanager" "KDE wallet manager" OFF \
         "plasma-discover" "KDE Discover software store" OFF \
@@ -113,153 +119,6 @@ if [ $? -eq 0 ] && [ ! -z "$selected_packages" ]; then
 fi
 }
 
-function_awesomewm() {
-    local response
-    response=$(whiptail --title "Install AwesomeWM" --yesno "This will install AwesomeWM Compton Nitrogen and Dmenu. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-    sudo apt install awesome nitrogen compton dmenu thunar -y
-    #make compton conf
-    sudo cat > $HOME/.config/compton.conf <<EOF
-# Shadow
-shadow = true;
-no-dnd-shadow = true;
-no-dock-shadow = true;
-clear-shadow = true;
-shadow-radius = 7;
-shadow-offset-x = -7;
-shadow-offset-y = -7;
-# shadow-opacity = 0.7;
-# shadow-red = 0.0;
-# shadow-green = 0.0;
-# shadow-blue = 0.0;
-shadow-exclude = [
-        "name = 'Notification'",
-        "class_g = 'Conky'",
-        "class_g ?= 'Notify-osd'",
-        "class_g = 'Cairo-clock'",
-        "_GTK_FRAME_EXTENTS@:c"
-];
-# shadow-exclude = "n:e:Notification";
-# shadow-exclude-reg = "x10+0+0";
-# xinerama-shadow-crop = true;
-
-# Opacity
-menu-opacity = 0.8;
-inactive-opacity = 0.8;
-# active-opacity = 0.8;
-frame-opacity = 0.7;
-inactive-opacity-override = false;
-alpha-step = 0.06;
-# inactive-dim = 0.2;
-# inactive-dim-fixed = true;
-# blur-background = true;
-# blur-background-frame = true;
-blur-kern = "3x3box";
-# blur-kern = "5,5,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1";
-# blur-background-fixed = true;
-blur-background-exclude = [
-        "window_type = 'dock'",
-        "window_type = 'desktop'",
-        "_GTK_FRAME_EXTENTS@:c"
-];
-# opacity-rule = [ "80:class_g = 'URxvt'" ];
-
-# Fading
-fading = true;
-# fade-delta = 30;
-fade-in-step = 0.03;
-fade-out-step = 0.03;
-# no-fading-openclose = true;
-# no-fading-destroyed-argb = true;
-fade-exclude = [ ];
-
-# Other
-backend = "xrender";
-mark-wmwin-focused = true;
-mark-ovredir-focused = true;
-# use-ewmh-active-win = true;
-detect-rounded-corners = true;
-detect-client-opacity = true;
-refresh-rate = 0;
-vsync = "none";
-dbe = false;
-paint-on-overlay = true;
-# sw-opti = true;
-# unredir-if-possible = true;
-# unredir-if-possible-delay = 5000;
-# unredir-if-possible-exclude = [ ];
-focus-exclude = [ "class_g = 'Cairo-clock'" ];
-detect-transient = true;
-detect-client-leader = true;
-invert-color-include = [ ];
-# resize-damage = 1;
-
-# GLX backend
-# glx-no-stencil = true;
-glx-copy-from-front = false;
-# glx-use-copysubbuffermesa = true;
-# glx-no-rebind-pixmap = true;
-glx-swap-method = "undefined";
-# glx-use-gpushader4 = true;
-# xrender-sync = true;
-# xrender-sync-fence = true;
-
-# Window type settings
-wintypes:
-{
-  tooltip = { fade = true; shadow = true; opacity = 0.75; focus = true; };
-};
-EOF
-    # Disable KWin compositing on startup
-    kwriteconfig5 --file kwinrc --group Compositing --key Enabled false
-    # Wait a bit for KWin to fully disable compositing
-    sleep 2
-    # Replace KWin with Compton
-    compton --config path/to/your/compton.conf --daemon
-    sudo mkdir -p $HOME/.config/awesome
-    sudo cp /etc/xdg/awesome/rc.lua $HOME/.config/awesome/
-    git clone https://gitlab.com/dwt1/wallpapers.git $HOME/.config/wallpapers
-    #add volume control
-    sudo cat >> $HOME/.config/awesome/rc.lua <<EOF
-    -- Volume Control
-    local volume_widget = require('awesome-wm-widgets.volume-widget.volume')
-    -- Autostart applications
-    awful.spawn.with_shell("compton --daemon")
-    -- Rest of the configuration
-    ...
-    s.mytasklist, -- Middle widget
-    { -- Right widgets
-        layout = wibox.layout.fixed.horizontal,
-        ...
-        -- default
-        volume_widget(),
-        -- customized
-        volume_widget{
-            widget_type = 'arc'
-        },
-        ...
-}
-EOF
-    #set autostart applications
-    sudo cat >> $HOME/.config/awesome/rc.lua <<EOF
-    -- Autostart Applications
-    awful.spawn.with_shell("compton --config $HOME/.config/compton.conf --daemon")
-    awful.spawn.with_shell("nitrogen --restore")
-EOF
-    #set dmenu to mod+r 
-    sudo sed -i 's/awful.key({ modkey },            "r",     function () awful.screen.focused().mypromptbox:run() end,/awful.key({ modkey },            "r",     function () awful.spawn("dmenu_run") end,/g' $HOME/.config/awesome/rc.lua
-    sudo sed -i 's/{description = "run prompt", group = "launcher"}),/{description = "run dmenu", group = "launcher"}),/g' $HOME/.config/awesome/rc.lua
-    #set wallpaper to nitrogen for all 3 screens
-    nitrogen --set-zommed $HOME/.config/wallpapers/0002.jpg --head=0 --save
-    nitrogen --set-zommed $HOME/.config/wallpapers/0229.jpg --head=1 --save
-    nitrogen --set-zommed $HOME/.config/wallpapers/0276.jpg --head=2 --save
-    #add gaps to windows
-    sudo cat >> $HOME/.config/awesome/rc.lua <<EOF
-    -- Gaps
-    beautiful.useless_gap = 10
-EOF
-
-}
-
 function remove_packages() {
     local installed_packages=(
         "libpcsclite1" "PC/SC Lite shared library" OFF \
@@ -296,6 +155,8 @@ function remove_packages() {
         "nfs-common" "NFS support files common to client and server" OFF \
         "neofetch" "System information tool" OFF \
         "curl" "Command line tool for transferring data with URL syntax" OFF \
+        "jq" "Command-line JSON processor" OFF \
+        "software-properties-common" "Software properties common utilities" OFF \
         "lsb-release" "Linux Standard Base version reporting utility" OFF \
         "unattended-upgrades" "Automatic installation of security upgrades" OFF \
         "kwalletmanager" "KDE wallet manager" OFF \
@@ -423,25 +284,6 @@ function install_btop() {
     sudo apt --fix-broken install -y
 }
 
-function install_firefox-browser() {
-    local response
-    response=$(whiptail --title "Install Firefox" --yesno "This will remove the existing Firefox installation as Firefox-ESR and Snap Firefox are incompatible with CAC use. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-
-    if [ $? -eq 0 ]; then
-        sudo apt remove firefox-esr -y && sudo apt purge firefox-esr -y
-        sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 2667CA5C
-        sudo gpg -ao ~/ubuntuzilla.gpg --export 2667CA5C
-        cat ubuntuzilla.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/ubuntuzilla.gpg
-        sudo rm ~/ubuntuzilla.gpg
-        echo "deb [signed-by=/etc/apt/keyrings/ubuntuzilla.gpg] http://downloads.sourceforge.net/project/ubuntuzilla/mozilla/apt all main" | sudo tee /etc/apt/sources.list.d/ubuntuzilla.list > /dev/null
-        sudo apt update -y && sudo apt upgrade -y
-        sudo apt install firefox-mozilla-build -y
-    else
-        echo "Installation canceled by user"
-    fi
-    sudo apt --fix-broken install -y
-}
-
 function install_thorium-browser() {
     local response
     response=$(whiptail --title "Install Thorium" --yesno "This will install Thorium web browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
@@ -500,7 +342,7 @@ function install_brave-browser () {
 }
 
 
-function update_firefox() {
+function install_firefox() {
     local response
     response=$(whiptail --title "Update Firefox" --yesno "This will update Firefox to the latest version. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
 
@@ -517,6 +359,10 @@ function update_firefox() {
         sudo mkdir -p /opt/firefox
         sudo cp -r $HOME/Downloads/firefox/* /opt/firefox
         rm -rf $HOME/Downloads/firefox-latest.tar.bz2 $HOME/Downloads/firefox
+        if [ -f "/usr/bin/firefox" ]; then
+            sudo mv /usr/bin/firefox /usr/bin/firefox.bak.$TIMESTAMP
+            sudo ln -s /opt/firefox/firefox /usr/bin/firefox
+        fi
     else
         echo "Update canceled by user"
     fi
@@ -1366,7 +1212,7 @@ while true; do
         4) function_status remove_packages;;
         5) function_status download_and_install_deb;;
         6) function_status install_btop;;
-        7) function_status install_firefox-browser;;
+        7) function_status install_firefox;;
         8) function_status install_brave-browser;;
         9) function_status install_google-chrome;;
         10) function_status install_mullvad-browser;;
