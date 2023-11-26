@@ -481,8 +481,8 @@ function install_virtualbox () {
         # Install the Linux headers and dkms for the current running kernel
         sudo apt install linux-headers-$(uname -r) dkms -y
         # Install latest version of VirtualBox
-        VB_LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'VirtualBox-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-        sudo apt install virtualbox-$VB_LATEST_VERSION -y
+        #VB_LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'VirtualBox-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        sudo apt install virtualbox-7.0 -y
         # Download the latest Oracle VM VirtualBox Extension Pack
         LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'Oracle_VM_VirtualBox_Extension_Pack-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
         wget "https://download.virtualbox.org/virtualbox/$LATEST_VERSION/Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack" -O "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
