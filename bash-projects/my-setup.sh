@@ -500,8 +500,11 @@ function install_virtualbox () {
 function install_python_packages () {
     for cmd in python3 pip3; do
         if ! command -v $cmd &> /dev/null; then
-            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
-            return 1
+            whiptail --title "Error" --msgbox "$cmd could not be found. Lets install python3 and pip3" 8 50
+            sudo apt install python3 python3-pip -y
+            # Restart the function after installing python3 and pip3
+            install_python_packages
+            return
         fi
     done
 
