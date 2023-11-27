@@ -958,188 +958,6 @@ function configure_bashrc () {
 EOF
 }
 
-function configure_hotkeys () {
-    source ~/.bashrc
-    mkdir -p ~/.keybindings
-    tee ~/.keybindings/custom.keybindings <<EOF
-    [Data]
-    DataCount=1
-
-    [Data_1]
-    Comment=Comment
-    DataCount=6
-    Enabled=true
-    Name=Custom-launches
-    SystemGroup=0
-    Type=ACTION_DATA_GROUP
-
-    [Data_1Conditions]
-    Comment=
-    ConditionsCount=0
-
-    [Data_1_1]
-    Comment=launches firefox
-    Enabled=true
-    Name=firefox
-    Type=SIMPLE_ACTION_DATA
-
-    [Data_1_1Actions]
-    ActionsCount=1
-
-    [Data_1_1Actions0]
-    CommandURL=firefox
-    Type=COMMAND_URL
-
-    [Data_1_1Conditions]
-    Comment=
-    ConditionsCount=0
-
-    [Data_1_1Triggers]
-    Comment=Simple_action
-    TriggersCount=1
-
-    [Data_1_1Triggers0]
-    Key=Ctrl+Alt+F
-    Type=SHORTCUT
-    Uuid={0cf7902b-6d51-483d-b656-7fdb427ee224}
-
-    [Data_1_2]
-    Comment=launches brave browser
-    Enabled=true
-    Name=brave
-    Type=SIMPLE_ACTION_DATA
-
-    [Data_1_2Actions]
-    ActionsCount=1
-
-    [Data_1_2Actions0]
-    CommandURL=brave-browser
-    Type=COMMAND_URL
-
-    [Data_1_2Conditions]
-    Comment=
-    ConditionsCount=0
-
-    [Data_1_2Triggers]
-    Comment=Simple_action
-    TriggersCount=1
-
-    [Data_1_2Triggers0]
-    Key=Ctrl+Alt+B
-    Type=SHORTCUT
-    Uuid={743534d6-ed1e-43ad-a1ef-8c449dba2594}
-
-    [Data_1_3]
-    Comment=launches google chrome
-    Enabled=true
-    Name=google
-    Type=SIMPLE_ACTION_DATA
-
-    [Data_1_3Actions]
-    ActionsCount=1
-
-    [Data_1_3Actions0]
-    CommandURL=google-chrome
-    Type=COMMAND_URL
-
-    [Data_1_3Conditions]
-    Comment=
-    ConditionsCount=0
-
-    [Data_1_3Triggers]
-    Comment=Simple_action
-    TriggersCount=1
-
-    [Data_1_3Triggers0]
-    Key=Ctrl+Alt+G
-    Type=SHORTCUT
-    Uuid={57805a1d-97b5-4458-b94b-0249cb9b4fc2}
-
-    [Data_1_4]
-    Comment=brave incognito
-    Enabled=true
-    Name=brave-incognito
-    Type=SIMPLE_ACTION_DATA
-
-    [Data_1_4Actions]
-    ActionsCount=1
-
-    [Data_1_4Actions0]
-    CommandURL=brave-browser -incognito
-    Type=COMMAND_URL
-
-    [Data_1_4Conditions]
-    Comment=
-    ConditionsCount=0
-
-    [Data_1_4Triggers]
-    Comment=Simple_action
-    TriggersCount=1
-
-    [Data_1_4Triggers0]
-    Key=Ctrl+Alt+I
-    Type=SHORTCUT
-    Uuid={effa10da-83a8-45ae-8da0-3ac20b5ed258}
-
-    [Data_1_5]
-    Comment=launches vscode
-    Enabled=true
-    Name=vscode
-    Type=SIMPLE_ACTION_DATA
-
-    [Data_1_5Actions]
-    ActionsCount=1
-
-    [Data_1_5Actions0]
-    CommandURL=code
-    Type=COMMAND_URL
-
-    [Data_1_5Conditions]
-    Comment=
-    ConditionsCount=0
-
-    [Data_1_5Triggers]
-    Comment=Simple_action
-    TriggersCount=1
-
-    [Data_1_5Triggers0]
-    Key=Ctrl+Alt+V
-    Type=SHORTCUT
-    Uuid={ecc50121-e337-4738-b7ba-3f381f521d76}
-
-    [Data_1_6]
-    Comment=launches kate
-    Enabled=true
-    Name=kate
-    Type=SIMPLE_ACTION_DATA
-
-    [Data_1_6Actions]
-    ActionsCount=1
-
-    [Data_1_6Actions0]
-    CommandURL=kate
-    Type=COMMAND_URL
-
-    [Data_1_6Conditions]
-    Comment=
-    ConditionsCount=0
-
-    [Data_1_6Triggers]
-    Comment=Simple_action
-    TriggersCount=1
-
-    [Data_1_6Triggers0]
-    Key=Ctrl+Alt+K
-    Type=SHORTCUT
-    Uuid={c36dfafa-11aa-4311-a19e-fcd2aa07d79f}
-
-    [Main]
-    AllowMerge=true
-    ImportId=69
-    Version=2
-EOF
-}
-
 function enable_UFW () {
     local response
     response=$(whiptail --title "Confirmation" --yesno "Do you want to enable UFW and configure rules for Git Steam and Unraid?" 8 50)
@@ -1167,6 +985,29 @@ function enable_UFW () {
     sudo ufw allow 27031:27036/udp
     sudo ufw allow 4380/udp
     sudo ufw reload
+}
+
+function configure_fstab () {
+    local response
+    response=$(whiptail --title "Confirmation" --yesno "Do you want to configure fstab?" 8 50)
+    if [ $? -ne 0 ]; then
+        return
+    fi
+
+    sudo cp /etc/fstab /etc/fstab.bak
+    sudo mkdir /mnt/Movies
+    sudo mkdir /mnt/TV
+    sudo mkdir /mnt/Downloads
+    sudo mkdir /mnt/Disney\ Movies
+    sudo mkdir /mnt/Christmas
+    sudo cat << 'EOF' | sudo tee -a /etc/fstab > /dev/null
+    192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0
+    192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0
+    192.168.1.133:/mnt/user/Downloads /mnt/Downloads nfs defaults 0 0
+    192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0
+    192.168.1.133:/mnt/user/Christmas /mnt/Christmas nfs defaults 0 0
+EOF
+    sudo mount -a
 }
 
 #error handling when a function fails
@@ -1206,7 +1047,8 @@ while true; do
         "19" "Install Theme" \
         "20" "Configure .bashrc" \
         "21" "Enable UFW" \
-        "22" "Exit" 3>&1 1>&2 2>&3)
+        "22" "Configure fstab" \
+        "23" "Exit" 3>&1 1>&2 2>&3)
     
     case $choice in
         1) function_status blacklist_nouveau;;
@@ -1230,7 +1072,8 @@ while true; do
         19) function_status install_theme;;
         20) function_status configure_bashrc;;
         21) function_status enable_UFW;;
-        22) echo "Exiting script."; break;;
+        22) function_status configure_fstab;;
+        23) echo "Exiting script."; break;;
         *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
     esac
     # Check if the return code is 1 (Cancel button was pressed)
