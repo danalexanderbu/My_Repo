@@ -24,7 +24,7 @@ config.widget_border_color = '#535d6c66'
 config.widget_background_color = '#22222233'
 
 -- popup
-config.popup_bg = '#22222233'
+config.popup_bg = '#222222FF'
 config.popup_border_width = 1
 config.popup_border_color = '#535d6c66'
 config.popup_bar_color = '#aaaaaa'

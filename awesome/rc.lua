@@ -182,37 +182,7 @@ local function set_wallpaper(s)
 end
 
 
--- Network Speed Widget
-local net_speed_widget = wibox.widget {
-    widget = wibox.widget.textbox
-}
-
--- Function to update Network Speed
-local function update_net_speed()
-    awful.spawn.easy_async_with_shell("ifstat -t 1 1 | tail -n 1 | awk '{print $2, $3}'", function(stdout)
-        -- Assuming $6 is download and $8 is upload speed
-        net_speed_widget.text = "↓ " .. stdout:match("(%d+%.%d+)%s") .. " ↑ " .. stdout:match("%s(%d+%.%d+)")
-    end)
-end
-
--- Function to update External IP
-local function update_ip()
-    awful.spawn.easy_async_with_shell("curl -s ifconfig.me", function(stdout)
-        ip_widget.text = "IP: " .. stdout
-    end)
-end
-
--- Timer to update widgets
-gears.timer {
-    timeout   = 1, -- Update interval in seconds
-    autostart = true,
-    callback  = function()
-        update_net_speed()
-        update_ip()
-    end
-}
-
-
+local net_speed_widget = require("awesome-wm-widgets.net-speed-widget.net-speed")
 
 local volume_widget = require('awesome-wm-widgets.volume-widget.volume')
 
@@ -262,7 +232,7 @@ awful.screen.connect_for_each_screen(function(s)
     }
 
     -- Create the wibox
-    s.mywibox = awful.wibar({ position = "top", screen = s, font = "JetBrainsMono NF ExtraLight 12" })
+    s.mywibox = awful.wibar({ position = "top", screen = s, font = 14, height = 30 })
 
     -- Add widgets to the wibox
     s.mywibox:setup {
@@ -282,9 +252,7 @@ awful.screen.connect_for_each_screen(function(s)
             s.mylayoutbox,
 	    ram_widget(),
 	    cpu_widget(),
-	    spacer,
-	    net_speed_widget,
-	    spacer,
+	    net_speed_widget(),
 	    fs_widget({ mounts = { '/', '/home' } }),
 	    weather_widget({
 		    api_key='bdd2ad474a8ff7bad18381bfac1d2713',
