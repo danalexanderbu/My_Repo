@@ -270,7 +270,12 @@ awful.screen.connect_for_each_screen(function(s)
 		    widget_type = 'arc'
 	    },
 	    spacer,
-	    logout_menu_widget(),
+	    logout_menu_widget({
+		    onlogout = function() awesome.quit() end,
+		    onreboot = function() awful.spawn.with_shell("sudo reboot") end,
+		    onsuspend = function() awful.spawn.with_shell("sudo systemctl suspend") end,
+		    onpoweroff = function() awful.spawn.with_shell("sudo shutdown now") end
+	    })
         }
     }
 end)
