@@ -1037,18 +1037,17 @@ while true; do
         "9" "Install Chrome" \
         "10" "Install Mullvad" \
         "11" "Install Thorium" \
-        "12" "Update Firefox" \
-        "13" "Install Flatpak and Bottles" \
-        "14" "Install ProtonGE" \
-        "15" "Install Obsidian" \
-        "16" "Install VirtualBox" \
-        "17" "Install Python Packages" \
-        "18" "Install Git" \
-        "19" "Install Theme" \
-        "20" "Configure .bashrc" \
-        "21" "Enable UFW" \
-        "22" "Configure fstab" \
-        "23" "Exit" 3>&1 1>&2 2>&3)
+        "12" "Install Flatpak and Bottles" \
+        "13" "Install ProtonGE" \
+        "14" "Install Obsidian" \
+        "15" "Install VirtualBox" \
+        "16" "Install Python Packages" \
+        "17" "Install Git" \
+        "18" "Install Theme" \
+        "19" "Configure .bashrc" \
+        "20" "Enable UFW" \
+        "21" "Configure fstab" \
+        "22" "Exit" 3>&1 1>&2 2>&3)
     
     case $choice in
         1) function_status blacklist_nouveau;;
@@ -1062,18 +1061,17 @@ while true; do
         9) function_status install_google-chrome;;
         10) function_status install_mullvad-browser;;
         11) function_status install_thorium-browser;;
-        12) function_status update_firefox;;
-        13) function_status install_flatpak_and_bottles;;
-        14) function_status install_protonGE;;
-        15) function_status install_obsidian;;
-        16) function_status install_virtualbox;;
-        17) function_status instal_python_packages;;
-        18) function_status install_git;;
-        19) function_status install_theme;;
-        20) function_status configure_bashrc;;
-        21) function_status enable_UFW;;
-        22) function_status configure_fstab;;
-        23) echo "Exiting script."; break;;
+        12) function_status install_flatpak_and_bottles;;
+        13) function_status install_protonGE;;
+        14) function_status install_obsidian;;
+        15) function_status install_virtualbox;;
+        16) function_status instal_python_packages;;
+        17) function_status install_git;;
+        18) function_status install_theme;;
+        19) function_status configure_bashrc;;
+        20) function_status enable_UFW;;
+        21) function_status configure_fstab;;
+        22) echo "Exiting script."; break;;
         *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
     esac
     # Check if the return code is 1 (Cancel button was pressed)
