@@ -6,40 +6,27 @@
 #This has been tested on Debian 12 (Bookworm)
 #If you have a problem with CAC setup try opening firefox and chrome and then rerunning the script
 function blacklist_nouveau() {
-    # Check if whiptail is installed
-    if ! command -v whiptail &> /dev/null; then
-        echo "whiptail is not installed. Installing now..."
-        sudo apt update
-        sudo apt install whiptail -y
-        # Restart the function after installing whiptail
-        blacklist_nouveau
-        return
-    fi
+    # Inform the user about the action being taken
+    echo "The nouveau driver will be blacklisted. This should be checked if using an Nvidia GPU."
 
-    whiptail --title "Notice" --msgbox "The nouveau driver will be blacklisted and should be checked if using Nvidia GPU" 10 60
+    # Blacklist the nouveau driver
     echo "blacklist nouveau" | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
     echo "options nouveau modeset=0" | sudo tee -a /etc/modprobe.d/blacklist-nouveau.conf
+
+    # Update initramfs
     sudo update-initramfs -u
 }
 
 function add_repositories() {
-    # Check if whiptail is installed
-    if ! command -v whiptail &> /dev/null; then
-        echo "whiptail is not installed. Installing now..."
-        sudo apt update
-        sudo apt install whiptail -y
-        # Restart the function after installing whiptail
-        add_repositories
-        return
-    fi
-
-    whiptail --title "Notice" --msgbox "Non-free and contrib repositories will be added" 10 60
+     # Display a notice about the action being taken
+    echo "Adding non-free and contrip repositories"
+    
     sudo add-apt-repository non-free -y
     sudo add-apt-repository contrib non-free -y
 }
 
 function apt_installs() {
-    declare -a packages=(
+    declare -a packages=(\
         "libpcsclite1" "PC/SC Lite shared library" ON \
         "pcscd" "Middleware to access a smart card" ON \
         "libccid" "PC/SC driver for USB CCID smart card readers" ON \
@@ -58,65 +45,52 @@ function apt_installs() {
         "ethtool" "Utility for controlling network drivers and hardware" ON \
         "net-tools" "Networking tools" ON \
         "nmap" "Network exploration tool and security scanner" ON \
+        "jq" "Json Query language interpreter" ON \
+        "compton" "Compositor for AwesomeWM" OFF \
+        "nitrogen" "Wallpaper manager for AwesomeWM" OFF \
+        "dmenu" "Better menu for startup in AwesomeWM" OFF\
         "samba" "SMB/CIFS file, print, and login server for Unix" ON \
         "gnome-keyring" "GNOME keyring services" ON \
         "apt-transport-https" "APT transport for downloading via the HTTPS protocol" ON \
         "docker" "Container platform tool" ON \
         "gnupg2" "GNU privacy guard - modern version" ON \
         "ebtables" "Ethernet bridge frame table administration" ON \
-        "aria2" "High speed download utility" ON \
-        "thunderbird" "Email, news and chat client from Mozilla" ON \
-        "ufw" "Uncomplicated Firewall" ON \
-        "jq" "Command-line JSON processor" ON \
-        "awesome" "highly configurable, next generation framework window manager for Debian 12" ON \     
-        "nitrogen" "wallpaper browser and changing utility for Debian 12" ON \
-        "compton" "X11 compositor for Debian 12" ON \
-        "dmenu" "dynamic menu for Debian 12" ON \
+        "aria2" "High speed download utility" O.COLORIZED.1080p.BluRay.1600MB.DD2.0.x264-GalaxyRG[TGx]
         "timeshift" "System restore tool for Linux" ON \
         "nfs-common" "NFS support files common to client and server" ON \
         "neofetch" "System information tool" ON \
         "curl" "Command line tool for transferring data with URL syntax" ON \
         "lsb-release" "Linux Standard Base version reporting utility" ON \
         "unattended-upgrades" "Automatic installation of security upgrades" ON \
-        "software-properties-common" "Software properties common utilities" ON \
         "mlocate" "Faster locate using database" ON \
         "kwalletmanager" "KDE wallet manager" OFF \
         "plasma-discover" "KDE Discover software store" OFF \
         "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF
     )
 
-# Use whiptail to display the checklist
-selected_packages=$(whiptail --title "Package Installation" --checklist \
-"Select the packages you want to install:" 30 90 20 \
-"${packages[@]}" 3>&1 1>&2 2>&3)
-echo "Selected packages: $selected_packages"
-
-whiptail --title "Notice" --msgbox "After your package selections, the following actions will be taken:\n\n1. Fonts cache will be refreshed using: sudo fc-cache -f -v\n2. Language support packages will be installed.\n3. System will be updated and upgraded." 12 78
-
-# If user pressed Cancel, selected_packages will be empty
-if [ $? -eq 0 ] && [ ! -z "$selected_packages" ]; then
-    for pkg in $selected_packages; do
-        # Remove surrounding quotes from package names
-        pkg=$(echo $pkg | tr -d '"')
-        if ! dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
-            sudo apt install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
+    for ((i=0; i<${#packages[@]}; i+=3)); do
+        if [ "${packages[i+2]}" == "ON" ]; then
+            pkg=${packages[i]}
+            if ! dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
+                sudo apt install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
+            fi
         fi
     done
-    # If the user did not select these packages, then remove them
-    if [[ $selected_packages != *"kwalletmanager"* ]]; then
-        sudo apt remove --purge kwalletmanager -y
-    fi
-    if [[ $selected_packages != *"plasma-discover"* ]]; then
-        sudo apt remove --purge plasma-discover -y
-    fi
-    if [[ $selected_packages != *"plasma-discover-snap-backend"* ]]; then
-        sudo apt remove --purge plasma-discover-snap-backend -y
-    fi
+    echo "Installed ${packages[@]}"
 
-    sudo fc-cache -f -v
-    sudo apt install $(check-language-support) -y
-    sudo apt update -y && sudo apt upgrade -y
-fi
+}
+
+function_awesomewm() {
+    sudo apt install awesome nitrogen compton dmenu -y
+    mkdir -p ~/.config/awesome
+    sudo cp ~/Documents/My_Repo/awesome/rc.lua ~/.config/awesome/rc.lua
+    sudo cp ~/Documents/My_Repo/awesome/json.lua ~/.config/awesome/json.lua
+    sudo cp -r ~/Documents/My_Repo/awesome/icons ~/.config/awesome/icons/
+    sudo cp -r ~/Documents/My_Repo/awesome/themes ~/.config/awesome/themes/
+    sudo cp -r ~/Documents/My_Repo/awesome/wallpapers ~/.config/wallpapers/
+    sudo cp -r ~/Documents/My_Repo/awesome/awesome-wm-widgets ~/.config/awesome/awesome-wm-widgets
+    sudo cp  ~/Documents/My_Repo/awesome/compton.conf ~/.config/compton.conf
+    sudo cp  ~/Documents/My_Repo/awesome/display.sh ~/.config/display.sh
 }
 
 function remove_packages() {
@@ -155,8 +129,6 @@ function remove_packages() {
         "nfs-common" "NFS support files common to client and server" OFF \
         "neofetch" "System information tool" OFF \
         "curl" "Command line tool for transferring data with URL syntax" OFF \
-        "jq" "Command-line JSON processor" OFF \
-        "software-properties-common" "Software properties common utilities" OFF \
         "lsb-release" "Linux Standard Base version reporting utility" OFF \
         "unattended-upgrades" "Automatic installation of security upgrades" OFF \
         "kwalletmanager" "KDE wallet manager" OFF \
@@ -169,87 +141,84 @@ function remove_packages() {
         "mullvad-vpn" "Mullvad browser" OFF \
     )
        
-    for pkg in "${packages[@]}"; do
-        if dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
-            if [[ " ${default_selection[@]} " =~ " ${pkg} " ]]; then
-                installed_packages+=("$pkg" "Installed" "ON")
-            else
-                installed_packages+=("$pkg" "Installed" "OFF")
+# List of packages to remove
+    local to_remove=()
+
+    # Check which packages are installed and should be removed
+    for ((i=0; i<${#installed_packages[@]}; i+=3)); do
+        if [ "${installed_packages[i+2]}" == "OFF" ]; then
+            pkg="${installed_packages[i]}"
+            if dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
+                to_remove+=("$pkg")
             fi
         fi
     done
 
-    local to_remove=$(whiptail --title "Remove Packages" --checklist \
-    "Select the packages you want to remove:" 30 90 20 \
-    "${installed_packages[@]}" 3>&1 1>&2 2>&3)
-
-    echo "to_remove: $to_remove"  # Add this line for debugging
-
-    if [ $? -eq 0 ]; then
-        if [ -z "$to_remove" ]; then
-            echo "No packages selected for removal"
-        else
-            echo "Removing the following packages: $to_remove"
-            for pkg in $to_remove; do
-                pkg=$(echo $pkg | tr -d '"')
-                sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
-            done            
-        fi
-    else
-        echo "User canceled the operation"
+    # Check if there are packages to remove
+    if [ ${#to_remove[@]} -eq 0 ]; then
+        echo "No packages to remove."
+        return
     fi
+
+    echo "Removing the following packages: ${to_remove[*]}"
+    for pkg in "${to_remove[@]}"; do
+        sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
+    done
+
     sudo apt autoremove -y
 }
 
 function download_and_install_deb() {
     cd $HOME/Downloads
     declare -a urls=(
-    "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
-    "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
-    "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
-    "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
-    "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
-    "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
-    "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
+        "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
+        "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
+        "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
+        "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
+        "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
+        "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
+        "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
     )
 
-    # Create an array for whiptail
-    declare -a whiptail_array=()
-    for url in "${urls[@]}"; do
-        whiptail_array+=("$(basename "$url")" "Download and install" "OFF")
-    done
-
-    # Use whiptail to get user input
-    selected_packages=$(whiptail --title "Download and Install Packages" --checklist \
-    "Select the packages you want to download and install:" 30 90 20 \
-    "${whiptail_array[@]}" 3>&1 1>&2 2>&3)
-
-    # Proceed with download and installation for selected packages
-    for package in $selected_packages; do
-        package=$(echo $package | tr -d '"') # Remove surrounding quotes
-        for url in "${urls[@]}"; do
-            if [[ $(basename "$url") == "$package" ]]; then
-                file_name="$package"
-                wget "$url" -O "$file_name"
+    echo "Please select the package you want to download and install. Enter number (e.g., 1) or 0 to exit:"
+    select package_url in "${urls[@]}" "Exit"; do
+        case $package_url in
+            "Exit")
+                echo "Exiting."
+                break
+                ;;
+            *)
+                file_name=$(basename "$package_url")
+                wget "$package_url" -O "$file_name"
                 echo "Successfully downloaded $file_name"
                 sudo dpkg -i "$file_name" && sudo apt --fix-broken install -y
                 echo "Successfully installed $file_name"
                 rm "$file_name"
-            fi
-        done
+                ;;
+        esac
+        echo "Do you want to download and install another package? [y/n]"
+        read -r response
+        if [ "$response" != "y" ] && [ "$response" != "Y" ]; then
+            break
+        fi
     done
+
     sudo apt update -y && sudo apt --fix-broken install && sudo apt upgrade -y
     cd $HOME
 }
 
 function install_btop() {
-    if (whiptail --title "Install btop" --yesno "Do you want to download and install the latest version of btop?" 10 60); then
+    local response
+    echo "Do you want to download and install the latest version of btop? [y/n]"
+    read -r response
+
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         cd $HOME/Downloads
         latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .assets[11].browser_download_url)
         
         # Check if the curl command was successful
         if [ $? -ne 0 ]; then
-            whiptail --title "Error" --msgbox "Failed to fetch the latest release URL for btop." 10 60
+            echo "Failed to fetch the latest release URL for btop."
             return 1
         fi
         
@@ -258,7 +227,7 @@ function install_btop() {
         
         # Check if the wget command was successful
         if [ $? -ne 0 ]; then
-            whiptail --title "Error" --msgbox "Failed to download the btop package." 10 60
+            echo "Failed to download the btop package."
             return 1
         fi
         
@@ -270,7 +239,7 @@ function install_btop() {
         
         # Check if the installation was successful
         if [ $? -ne 0 ]; then
-            whiptail --title "Error" --msgbox "Failed to install btop." 10 60
+            echo "Failed to install btop."
             return 1
         fi
         
@@ -279,74 +248,17 @@ function install_btop() {
         cd $HOME/Downloads
         rm -r "$btop_file_name"
     else
-        whiptail --title "Cancelled" --msgbox "btop installation cancelled." 10 60
+        echo "btop installation cancelled."
     fi
     sudo apt --fix-broken install -y
 }
 
-function install_thorium-browser() {
-    local response
-    response=$(whiptail --title "Install Thorium" --yesno "This will install Thorium web browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-
-    wget https://dl.thorium.rocks/debian/dists/stable/thorium.list && sudo mv thorium.list /etc/apt/sources.list.d/ && sudo apt update && sudo apt install thorium-browser -y
-    cd $HOME/Downloads
-    sudo dpkg -i thorium-browser_*.deb
-    rm thorium-browser_*.deb
-    cd $HOME
-    sudo apt --fix-broken install -y
-}
-
-function install_google-chrome() {
-    local response
-    response=$(whiptail --title "Install Google Chrome" --yesno "This will install Google Chrome. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-    cd $HOME/Downloads
-    curl https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome-stable_current_amd64.deb
-    sudo dpkg -i google-chrome-stable_current_amd64.deb
-    rm google-chrome-stable_current_amd64.deb
-    sudo apt --fix-broken install -y
-}
-
-function install_mullvad-browser () {
-    local response
-    response=$(whiptail --title "Install Mullvad" --yesno "This will install Mullvad VPN. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-    cd $HOME/Downloads
-    wget https://mullvad.net/en/download/browser/linux-x86_64/latest -O mullvad-browser-linux-x86_64*.tar.xz
-    tar -xvf mullvad-browser-linux-x86_64*.tar.xz
-    sudo mkdir -p /opt/mullvad-browser
-    sudo cp -r $HOME/Downloads/mullvad-browser/* /opt/mullvad-browser
-    sudo chown -R $(whoami):$(whoami) /opt/mullvad-browser
-    sudo updatedb
-    rm -r mullvad-browser-linux-x86_64*
-    sudo cat > /usr/share/applications/mullvad-browser.desktop <<EOF
-    [Desktop Entry]
-    Version=1.0
-    Type=Application
-    Name=Mullvad Browser
-    Comment=Private and secure web browser by Mullvad
-    Exec=/opt/mullvad-browser/Browser/start-mullvad-browser %u
-    Icon=/opt/mullvad-browser/Browser/browser/chrome/icons/default/default64.png
-    Terminal=false
-    Categories=Network;WebBrowser;
-EOF
-    sudo chmod +x /usr/share/applications/mullvad-browser.desktop
-    whiptail --msgbox "Mullvad-browser installed successfully! Please make sure to logout or restart to use the browser." 10 60
-}
-
-function install_brave-browser () {
-    local response
-    response=$(whiptail --title "Install Brave" --yesno "This will install Brave browser. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
-    sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-    echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-    sudo apt update -y && sudo apt install brave-browser -y
-    sudo apt --fix-broken install -y
-}
-
-
 function install_firefox() {
     local response
-    response=$(whiptail --title "Update Firefox" --yesno "This will update Firefox to the latest version. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+    echo "This will update Firefox to the latest version. Do you want to continue? [y/n]"
+    read -r response
 
-    if [ $? -eq 0 ]; then
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         cd $HOME/Downloads
         pkill firefox || true
         URL="https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US"
@@ -359,12 +271,92 @@ function install_firefox() {
         sudo mkdir -p /opt/firefox
         sudo cp -r $HOME/Downloads/firefox/* /opt/firefox
         rm -rf $HOME/Downloads/firefox-latest.tar.bz2 $HOME/Downloads/firefox
-        if [ -f "/usr/bin/firefox" ]; then
-            sudo mv /usr/bin/firefox /usr/bin/firefox.bak.$TIMESTAMP
-            sudo ln -s /opt/firefox/firefox /usr/bin/firefox
-        fi
+        echo "Firefox has been updated to the latest version."
     else
         echo "Update canceled by user"
+    fi
+}
+
+
+function install_thorium-browser() {
+    local response
+    echo "This will install Thorium web browser. Do you want to continue? [y/n]"
+    read -r response
+
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
+        cd $HOME/Downloads
+        wget https://dl.thorium.rocks/debian/dists/stable/thorium.list && sudo mv thorium.list /etc/apt/sources.list.d/ && sudo apt update
+        sudo apt install thorium-browser -y
+        echo "Thorium web browser has been installed successfully."
+        cd $HOME
+    else
+        echo "Installation canceled by user."
+    fi
+    sudo apt --fix-broken install -y
+}
+
+
+function install_google-chrome() {
+    local response
+    echo "This will install Google Chrome. Do you want to continue? [y/n]"
+    read -r response
+
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
+        cd $HOME/Downloads
+        curl https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o google-chrome-stable_current_amd64.deb
+        sudo dpkg -i google-chrome-stable_current_amd64.deb
+        rm google-chrome-stable_current_amd64.deb
+        sudo apt --fix-broken install -y
+        echo "Google Chrome has been installed successfully."
+    else
+        echo "Installation canceled by user."
+    fi
+}
+
+function install_mullvad-browser () {
+    local response
+    echo "This will install Mullvad VPN. Do you want to continue? [y/n]"
+    read -r response
+
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
+        cd $HOME/Downloads
+        wget https://mullvad.net/en/download/browser/linux-x86_64/latest -O mullvad-browser-linux-x86_64.tar.xz
+        tar -xvf mullvad-browser-linux-x86_64.tar.xz
+        sudo mkdir -p /opt/mullvad-browser
+        sudo cp -r $HOME/Downloads/mullvad-browser/* /opt/mullvad-browser
+        sudo chown -R $(whoami):$(whoami) /opt/mullvad-browser
+        sudo updatedb
+        rm -r mullvad-browser-linux-x86_64.tar.xz
+        sudo tee /usr/share/applications/mullvad-browser.desktop <<EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Mullvad Browser
+Comment=Private and secure web browser by Mullvad
+Exec=/opt/mullvad-browser/Browser/start-mullvad-browser %u
+Icon=/opt/mullvad-browser/Browser/browser/chrome/icons/default/default64.png
+Terminal=false
+Categories=Network;WebBrowser;
+EOF
+        sudo chmod +x /usr/share/applications/mullvad-browser.desktop
+        echo "Mullvad-browser installed successfully! Please make sure to logout or restart to use the browser."
+    else
+        echo "Installation canceled by user."
+    fi
+}
+
+function install_brave-browser () {
+    local response
+    echo "This will install Brave browser. Do you want to continue? [y/n]"
+    read -r response
+
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
+        sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+        sudo apt update -y && sudo apt install brave-browser -y
+        sudo apt --fix-broken install -y
+    else
+        echo "Installation canceled by user"
     fi
 }
 
@@ -375,9 +367,10 @@ function install_cac () {
 
 function install_flatpak_and_bottles () {
     local response
-    response=$(whiptail --title "Install Flatpak and Bottles" --yesno "This will install Flatpak and Bottles. Do you want to continue?" 10 50 3>&1 1>&2 2>&3)
+    echo "This will install Flatpak and Bottles. Do you want to continue? [y/n]"
+    read -r response
 
-    if [ $? -eq 0 ]; then
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         sudo apt install flatpak -y
         sudo apt install plasma-discover-backend-flatpak -y
         flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
@@ -390,20 +383,21 @@ function install_flatpak_and_bottles () {
 
 function install_protonGE () {
     if ! command -v steam &> /dev/null; then
-        whiptail --title "Error" --msgbox "Steam is not installed. Please install Steam first." 8 50
+        echo "Steam is not installed. Please install Steam first."
         return 1
     fi
 
     for cmd in curl jq steam; do
         if ! command -v $cmd &> /dev/null; then
-            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
+            echo "$cmd could not be found. Please install it and try again."
             return 1
         fi
     done
 
     local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Proton GE?" 8 50)
-    if [ $? -eq 0 ]; then
+    echo "Do you want to install Proton GE? [y/n]"
+    read -r response
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         latest_release_url_GE=$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | jq -r .assets[1].browser_download_url)
         file_name=$(basename "$latest_release_url_GE")
         wget "$latest_release_url_GE" -O "$file_name"
@@ -411,7 +405,7 @@ function install_protonGE () {
 
         # Check if the latest GE folder is already there
         if [ -d "$HOME/.steam/steam/compatibilitytools.d/$folder_name" ]; then
-            whiptail --title "Info" --msgbox "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file." 8 50
+            echo "Latest Proton GE version ($folder_name) is already installed. Removing the downloaded file."
             rm "$file_name"
         else
             tar -xzvf "$file_name"
@@ -423,50 +417,50 @@ function install_protonGE () {
 
             mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
             rm "$file_name"
-            whiptail --title "Info" --msgbox "Proton GE ($folder_name) has been installed successfully." 8 50
+            echo "Proton GE ($folder_name) has been installed successfully."
         fi
+    else
+        echo "Installation cancelled by user."
     fi
 }
 
 function install_obsidian () {
     for cmd in curl jq; do
         if ! command -v $cmd &> /dev/null; then
-            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
+            echo "$cmd could not be found. Please install it and try again."
             return 1
         fi
     done
 
     local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Obsidian?" 8 50)
-    if [ $? -eq 0 ]; then
+    echo "Do you want to install Obsidian? [y/n]"
+    read -r response
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
         wget "$latest_release_url_Obsidian"
         file_name=$(basename "$latest_release_url_Obsidian")
         sudo dpkg -i "$file_name"
         rm "$file_name"
         sudo apt --fix-broken install -y
-        whiptail --title "Info" --msgbox "Obsidian has been installed successfully." 8 50
+        echo "Obsidian has been installed successfully."
+    else
+        echo "Installation cancelled by user."
     fi
-    sudo apt --fix-broken install -y
 }
 
-function install_virtualbox () {
-    for cmd in curl; do
-        if ! command -v $cmd &> /dev/null; then
-            whiptail --title "Error" --msgbox "$cmd could not be found. Please install it and try again." 8 50
-            return 1
-        fi
-    done
 
+function install_virtualbox () {
     local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to install VirtualBox?" 8 50)
-    if [ $? -eq 0 ]; then
+    echo "Do you want to install VirtualBox? [y/n]"
+    read -r response
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         cd $HOME/Downloads
         # Add the Oracle VBox 2016 public key
         if dpkg -l | grep virtualbox > /dev/null; then
-            response=$(whiptail --title "VirtualBox Already Installed" --yesno "VirtualBox is already installed. Do you want to continue and reinstall?" 8 50)
-            if [ $? -ne 0 ]; then
-                whiptail --title "Info" --msgbox "Exiting script." 8 50
+            echo "VirtualBox is already installed. Do you want to continue and reinstall? [y/n]"
+            read -r response
+            if [ "$response" != "y" ] && [ "$response" != "Y" ]; then
+                echo "Exiting script."
                 return 0
             fi
         fi
@@ -481,8 +475,8 @@ function install_virtualbox () {
         # Install the Linux headers and dkms for the current running kernel
         sudo apt install linux-headers-$(uname -r) dkms -y
         # Install latest version of VirtualBox
-        #VB_LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'VirtualBox-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-        sudo apt install virtualbox-7.0 -y
+        VB_LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'VirtualBox-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        sudo apt install virtualbox-$VB_LATEST_VERSION -y
         # Download the latest Oracle VM VirtualBox Extension Pack
         LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'Oracle_VM_VirtualBox_Extension_Pack-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
         wget "https://download.virtualbox.org/virtualbox/$LATEST_VERSION/Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack" -O "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
@@ -492,7 +486,7 @@ function install_virtualbox () {
         rm "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
         # Add the current user to the vboxusers group to grant permission to access the vboxdrv kernel module and Change the user’s group to vboxusers for the current session
         sudo usermod -aG vboxusers $USER && newgrp vboxusers
-        whiptail --title "Info" --msgbox "Please log out and log back in to apply the group changes." 8 50
+        echo "Please log out and log back in to apply the group changes."
     fi
 }
 
@@ -500,17 +494,15 @@ function install_virtualbox () {
 function install_python_packages () {
     for cmd in python3 pip3; do
         if ! command -v $cmd &> /dev/null; then
-            whiptail --title "Error" --msgbox "$cmd could not be found. Lets install python3 and pip3" 8 50
-            sudo apt install python3 python3-pip -y
-            # Restart the function after installing python3 and pip3
-            install_python_packages
-            return
+            echo "$cmd could not be found. Please install it and try again."
+            return 1
         fi
     done
 
     local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to install the Python packages?" 8 50)
-    if [ $? -eq 0 ]; then
+    echo "Do you want to install the Python packages? [y/n]"
+    read -r response
+    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         packages=(
             aiohttp
             aiosignal
@@ -569,18 +561,11 @@ function install_python_packages () {
         )
         # More efficient way to install python packages than for loop
         pip3 install "${packages[@]}" --break-system-packages
-        whiptail --title "Info" --msgbox "Python packages installed successfully." 8 50
+        echo "Python packages installed successfully."
     fi
 }
 
-
 function install_git () {
-    local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to install Git?" 8 50)
-    if [ $? -ne 0 ]; then
-        return
-    fi
-
     #make git from source to enable openssl windows support on linux
     set -eu
     # Gather command line options
@@ -670,14 +655,14 @@ function install_git () {
     # Prompt the user for their name and email
     local name
     local email
-    name=$(whiptail --inputbox "Please enter your name:" 8 50 --title "User Name" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus -ne 0 ]; then
+    # Use read instead of whiptail for getting the name
+    read -p "Please enter your name: " name
+    if [ -z "$name" ]; then
         return
     fi
-    email=$(whiptail --inputbox "Please enter your email:" 8 50 --title "User Email" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus -ne 0 ]; then
+    # Use read instead of whiptail for getting the email
+    read -p "Please enter your email: " email
+    if [ -z "$email" ]; then
         return
     fi
     git config --global core.editor "code"
@@ -689,16 +674,17 @@ function install_git () {
     # Go to the Documents directory
     cd "$DOCUMENTS_DIR" || { echo "Failed to switch to the Documents directory"; exit 1; }
     # Check if SSH Key already exists
+    # Check if SSH Key already exists
     local ssh_key_path=~/.ssh/github_ssh_key.pub
     local ssh_key
     if [ ! -f "$ssh_key_path" ]; then
         # 1. Generate SSH Key (without passphrase for automation; you can modify as needed)
-        ssh-keygen -t ed25519 -C "danalexanderbu@gmail.com" -f ~/.ssh/github_ssh_key || { echo "SSH key generation failed"; exit 1; }
+        ssh-keygen -t ed25519 -C "$email" -f ~/.ssh/github_ssh_key || { echo "SSH key generation failed"; exit 1; }
         ssh_key=$(cat "$ssh_key_path")
-        whiptail --msgbox "Please add the following SSH key to your GitHub account:\n\n$ssh_key" 10 60
+        echo "Please add the following SSH key to your GitHub account:\n\n$ssh_key"
     else
         ssh_key=$(cat "$ssh_key_path")
-        whiptail --msgbox "SSH key already exists:\n\n$ssh_key" 10 60
+        echo "SSH key already exists:\n\n$ssh_key"
     fi
     # 2. Start the ssh-agent in the background and add the SSH key
     eval "$(ssh-agent -s)"
@@ -717,19 +703,6 @@ function install_git () {
 }
 
 function install_theme () {
-    local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to install themes?" 8 50)
-    if [ $? -ne 0 ]; then
-        return
-    fi
-
-    for cmd in git; do
-        if ! command -v $cmd &> /dev/null; then
-            echo "$cmd could not be found. Please install it and try again."
-            return 1
-        fi
-    done
-
     cd $HOME/Documents/
 
     # Clone the Layan-kde repository from GitHub to the current directory (Documents)
@@ -751,16 +724,9 @@ function install_theme () {
     sudo fc-cache -f -v
     cd $HOME
 
-    whiptail --msgbox "Themes installed successfully! Please make sure to apply them through your desktop environment settings." 10 60
 }
 
 function configure_bashrc () {
-    local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to configure your .bashrc file to be FREAKING AWESOME????" 8 50)
-    if [ $? -ne 0 ]; then
-        return
-    fi
-
     # Backup the existing .bashrc
     cp ~/.bashrc ~/.bashrc_backup
     # Append the new content to .bashrc using tee
@@ -958,12 +924,8 @@ function configure_bashrc () {
 EOF
 }
 
+
 function enable_UFW () {
-    local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to enable UFW and configure rules for Git Steam and Unraid?" 8 50)
-    if [ $? -ne 0 ]; then
-        return
-    fi
 
     sudo ufw enable
     #Allow internet
@@ -987,29 +949,6 @@ function enable_UFW () {
     sudo ufw reload
 }
 
-function configure_fstab () {
-    local response
-    response=$(whiptail --title "Confirmation" --yesno "Do you want to configure fstab?" 8 50)
-    if [ $? -ne 0 ]; then
-        return
-    fi
-
-    sudo cp /etc/fstab /etc/fstab.bak
-    sudo mkdir /mnt/Movies
-    sudo mkdir /mnt/TV
-    sudo mkdir /mnt/Downloads
-    sudo mkdir /mnt/Disney\ Movies
-    sudo mkdir /mnt/Christmas
-    sudo cat << 'EOF' | sudo tee -a /etc/fstab > /dev/null
-    192.168.1.133:/mnt/user/Movies /mnt/Movies nfs defaults 0 0
-    192.168.1.133:/mnt/user/TV /mnt/TV nfs defaults 0 0
-    192.168.1.133:/mnt/user/Downloads /mnt/Downloads nfs defaults 0 0
-    192.168.1.133:/mnt/user/Disney\040Movies /mnt/Disney\040Movies nfs defaults 0 0
-    192.168.1.133:/mnt/user/Christmas /mnt/Christmas nfs defaults 0 0
-EOF
-    sudo mount -a
-}
-
 #error handling when a function fails
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 LOGFILE="install_log_${TIMESTAMP}.txt"
@@ -1025,29 +964,31 @@ function function_status() {
 }
 
 while true; do
-    choice=$(whiptail --title "Debian Configuration" --menu "Choose an option" 25 78 16 \
-        "1" "Blacklist Nouveau" \
-        "2" "Add Repositories" \
-        "3" "Install Packages" \
-        "4" "Remove Packages" \
-        "5" "Download and Install .deb" \
-        "6" "Install btop" \
-        "7" "Install Firefox" \
-        "8" "Install Brave" \
-        "9" "Install Chrome" \
-        "10" "Install Mullvad" \
-        "11" "Install Thorium" \
-        "12" "Install Flatpak and Bottles" \
-        "13" "Install ProtonGE" \
-        "14" "Install Obsidian" \
-        "15" "Install VirtualBox" \
-        "16" "Install Python Packages" \
-        "17" "Install Git" \
-        "18" "Install Theme" \
-        "19" "Configure .bashrc" \
-        "20" "Enable UFW" \
-        "21" "Configure fstab" \
-        "22" "Exit" 3>&1 1>&2 2>&3)
+    echo "Choose an option:"
+    echo "1 - Blacklist Nouveau"
+    echo "2 - Add Repositories"
+    echo "3 - Install Packages"
+    echo "4 - Remove Packages"
+    echo "5 - Download and Install .deb"
+    echo "6 - Install btop"
+    echo "7 - Install Firefox"
+    echo "8 - Install Brave"
+    echo "9 - Install Chrome"
+    echo "10 - Install Mullvad"
+    echo "11 - Install Thorium"
+    echo "12 - Update Firefox"
+    echo "13 - Install Flatpak and Bottles"
+    echo "14 - Install ProtonGE"
+    echo "15 - Install Obsidian"
+    echo "16 - Install VirtualBox"
+    echo "17 - Install Python Packages"
+    echo "18 - Install Git"
+    echo "19 - Install Theme"
+    echo "20 - Configure .bashrc"
+    echo "21 - Enable UFW"
+    echo "22 - Install CaC certs"
+    echo "23 - Exit"
+    read -p "Enter your choice: " choice
     
     case $choice in
         1) function_status blacklist_nouveau;;
@@ -1056,28 +997,30 @@ while true; do
         4) function_status remove_packages;;
         5) function_status download_and_install_deb;;
         6) function_status install_btop;;
-        7) function_status install_firefox;;
+        7) function_status install_firefox-browser;;
         8) function_status install_brave-browser;;
         9) function_status install_google-chrome;;
         10) function_status install_mullvad-browser;;
         11) function_status install_thorium-browser;;
-        12) function_status install_flatpak_and_bottles;;
-        13) function_status install_protonGE;;
-        14) function_status install_obsidian;;
-        15) function_status install_virtualbox;;
-        16) function_status instal_python_packages;;
-        17) function_status install_git;;
-        18) function_status install_theme;;
-        19) function_status configure_bashrc;;
-        20) function_status enable_UFW;;
-        21) function_status configure_fstab;;
-        22) echo "Exiting script."; break;;
-        *) echo "Invalid option: $choice" | tee -a $LOGFILE;;
+        12) function_status update_firefox;;
+        13) function_status install_flatpak_and_bottles;;
+        14) function_status install_protonGE;;
+        15) function_status install_obsidian;;
+        16) function_status install_virtualbox;;
+        17) function_status instal_python_packages;;
+        18) function_status install_git;;
+        19) function_status install_theme;;
+        20) function_status configure_bashrc;;
+        21) function_status enable_UFW;;
+        22) function_status install_cac;;
+        23) echo "Exiting script."; break;;
+        *) echo "Invalid option: $choice";;
     esac
-    # Check if the return code is 1 (Cancel button was pressed)
-    if [ $? -eq 1 ]; then
-        echo "Installation canceled by user"
-        return
+
+    # Check if the user wants to exit
+    if [ "$choice" = "23" ]; then
+        echo "Exiting script."
+        break
     fi
 done
 
