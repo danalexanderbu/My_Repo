@@ -207,6 +207,47 @@ function download_and_install_deb() {
     cd $HOME
 }
 
+function install_kubernetes() {
+    #install kubernetes with kubeadm and containerd
+    curl  -fsSL  https://packages.cloud.google.com/apt/doc/apt-key.gpg|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kubernetes.gpg
+    echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    sudo apt update
+    sudo apt install kubelet kubeadm kubectl -y
+    sudo apt-mark hold kubelet kubeadm kubectl
+    sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+    sudo swapoff -a
+    # Enable kernel modules
+    sudo modprobe overlay
+    sudo modprobe br_netfilter
+
+    # Add some settings to sysctl
+    sudo tee /etc/sysctl.d/kubernetes.conf<<EOF
+    net.bridge.bridge-nf-call-ip6tables = 1
+    net.bridge.bridge-nf-call-iptables = 1
+    net.ipv4.ip_forward = 1
+EOF
+
+    # Reload sysctl
+    sudo sysctl --system
+    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt update
+    sudo apt install -y containerd.io
+    sudo mkdir -p /etc/containerd
+    sudo containerd config default|sudo tee /etc/containerd/config.toml
+    sudo systemctl restart containerd
+    sudo systemctl enable containerd
+    systemctl status  containerd
+    sudo systemctl enable kubelet
+    sudo systemctl start kubelet
+    sudo kubeadm config images pull --cri-socket unix:///run/containerd/containerd.sock
+    sudo sysctl -p
+    sudo kubeadm init > ~/kubeadm-init.log
+    mkdir -p $HOME/.kube
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+}
+
 function install_btop() {
     local response
     echo "Do you want to download and install the latest version of btop? [y/n]"
@@ -987,7 +1028,8 @@ while true; do
     echo "20 - Configure .bashrc"
     echo "21 - Enable UFW"
     echo "22 - Install CaC certs"
-    echo "23 - Exit"
+    echo "23 - Install Kubernetes"
+    echo "24 - Exit"
     read -p "Enter your choice: " choice
     
     case $choice in
@@ -1013,7 +1055,8 @@ while true; do
         20) function_status configure_bashrc;;
         21) function_status enable_UFW;;
         22) function_status install_cac;;
-        23) echo "Exiting script."; break;;
+        23) function_status install_kubernetes;;
+        24) echo "Exiting script."; break;;
         *) echo "Invalid option: $choice";;
     esac
 
