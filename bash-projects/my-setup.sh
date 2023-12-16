@@ -81,8 +81,10 @@ function apt_installs() {
 }
 
 function_awesomewm() {
-    sudo apt install awesome nitrogen compton dmenu -y
+    sudo apt install awesome nitrogen compton dmenu alacritty -y
     mkdir -p ~/.config/awesome
+    mkdir -p ~/.config/alacritty
+    sudo cp ~/Documents/My_Repo/awesome/alacritty/alacritty.yml ~/.config/alacritty/alacritty.yml
     sudo cp ~/Documents/My_Repo/awesome/rc.lua ~/.config/awesome/rc.lua
     sudo cp ~/Documents/My_Repo/awesome/json.lua ~/.config/awesome/json.lua
     sudo cp -r ~/Documents/My_Repo/awesome/icons ~/.config/awesome/icons/
