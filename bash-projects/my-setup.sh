@@ -52,10 +52,11 @@ function apt_installs() {
         "samba" "SMB/CIFS file, print, and login server for Unix" ON \
         "gnome-keyring" "GNOME keyring services" ON \
         "apt-transport-https" "APT transport for downloading via the HTTPS protocol" ON \
-        "docker" "Container platform tool" ON \
+        "docker.io" "Container platform tool" ON \
         "gnupg2" "GNU privacy guard - modern version" ON \
         "ebtables" "Ethernet bridge frame table administration" ON \
-        "aria2" "High speed download utility" O.COLORIZED.1080p.BluRay.1600MB.DD2.0.x264-GalaxyRG[TGx]
+        "aria2" "High speed download utility" ON \
+        "ca-certificates" "Common CA certificates" ON \
         "timeshift" "System restore tool for Linux" ON \
         "nfs-common" "NFS support files common to client and server" ON \
         "neofetch" "System information tool" ON \
@@ -178,7 +179,6 @@ function download_and_install_deb() {
         "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
         "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
         "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
-        "http://ftp.us.debian.org/debian/pool/main/c/ca-certificates/ca-certificates_20230311_all.deb"
         "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
     )
 
