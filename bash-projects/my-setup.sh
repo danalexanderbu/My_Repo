@@ -791,6 +791,12 @@ function configure_bashrc () {
     #My custom aliases
     alias uu="sudo apt update && sudo apt upgrade"
 
+    #Kubernetes alias
+    alias k="kubectl"
+    alias kg="kubectl get"
+    alias kdes="kubectl describe"
+    alias ki="kubectl delete"
+
     # Alias's for multiple directory listing commands
     alias la='ls -Alh' # show hidden files
     alias ls='ls -aFh --color=always' # add colors and file type extensions
