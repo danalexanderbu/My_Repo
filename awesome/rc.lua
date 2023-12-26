@@ -206,7 +206,7 @@ awful.screen.connect_for_each_screen(function(s)
     set_wallpaper(s)
 
     -- Each screen has its own tag table.
-    awful.tag({ "www", "dev", "virtual", "chat", "test", "games", "education", "videos", "downloads" }, s, awful.layout.layouts[1])
+    awful.tag({ "www", "dev", "virtual", "chat", "test", "games", "files", "videos", "downloads" }, s, awful.layout.layouts[1])
 
     -- Create a promptbox for each screen
     s.mypromptbox = awful.widget.prompt()
@@ -270,12 +270,13 @@ awful.screen.connect_for_each_screen(function(s)
 		    widget_type = 'arc'
 	    },
 	    spacer,
-	    logout_menu_widget({
+	    logout_menu_widget{
+		    font = 'JetBrainsMono NF ExtraLight',
 		    onlogout = function() awesome.quit() end,
-		    onreboot = function() awful.spawn.with_shell("sudo reboot") end,
-		    onsuspend = function() awful.spawn.with_shell("sudo systemctl suspend") end,
-		    onpoweroff = function() awful.spawn.with_shell("sudo shutdown now") end
-	    })
+		    onreboot = function() awful.spawn.with_shell("systemctl reboot") end,
+		    onsuspend = function() awful.spawn.with_shell("systemctl suspend") end,
+		    onpoweroff = function() awful.spawn.with_shell("systemctl shutdown now") end,
+	    }
         }
     }
 end)
