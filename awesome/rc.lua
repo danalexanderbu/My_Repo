@@ -194,6 +194,24 @@ local ram_widget = require("awesome-wm-widgets.ram-widget.ram-widget")
 
 local logout_menu_widget = require("awesome-wm-widgets.logout-menu-widget.logout-menu")
 
+local calendar_widget = require("awesome-wm-widgets.calendar-widget.calendar")
+
+-- Calendar
+mytextclock = wibox.widget.textclock()
+local cw = calendar_widget({
+    theme = 'outrun',
+    placement = 'top_right',
+    start_sunday = true,
+    radius = 8,
+-- with customized next/previous (see table above)
+    previous_month_button = 1,
+    next_month_button = 3,
+})
+mytextclock:connect_signal("button::press",
+    function(_, _, _, button)
+        if button == 1 then cw.toggle() end
+    end)
+
 -- spacer
 local spacer = wibox.widget.textbox(" ")
 spacer.forced_width = 10 -- Width of the spacer in pixels
@@ -248,7 +266,6 @@ awful.screen.connect_for_each_screen(function(s)
             layout = wibox.layout.fixed.horizontal,
             mykeyboardlayout,
             wibox.widget.systray(),
-            mytextclock,
             s.mylayoutbox,
 	    ram_widget(),
 	    cpu_widget(),
@@ -269,7 +286,7 @@ awful.screen.connect_for_each_screen(function(s)
 	    volume_widget{
 		    widget_type = 'arc'
 	    },
-	    spacer,
+	    mytextclock,
 	    logout_menu_widget{
 		    font = 'JetBrainsMono NF ExtraLight',
 		    onlogout = function() awesome.quit() end,

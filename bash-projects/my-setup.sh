@@ -120,7 +120,7 @@ function remove_packages() {
         "samba" "SMB/CIFS file, print, and login server for Unix" OFF \
         "gnome-keyring" "GNOME keyring services" OFF \
         "apt-transport-https" "APT transport for downloading via the HTTPS protocol" OFF \
-        "docker" "Container platform tool" OFF \
+        "docker.io" "Container platform tool" OFF \
         "gnupg2" "GNU privacy guard - modern version" OFF \
         "ebtables" "Ethernet bridge frame table administration" OFF \
         "aria2" "High speed download utility" OFF \
