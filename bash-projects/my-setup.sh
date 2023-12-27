@@ -978,7 +978,6 @@ EOF
 
 
 function enable_UFW () {
-
     sudo ufw enable
     #Allow internet
     sudo ufw allow 80
@@ -999,6 +998,19 @@ function enable_UFW () {
     sudo ufw allow 27031:27036/udp
     sudo ufw allow 4380/udp
     sudo ufw reload
+}
+
+function custom_fstab () {
+    #Backup fstab
+    sudo cp /etc/fstab /etc/fstab.bak
+    #Add fstab entries
+    sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+    sudo tee -a /etc/fstab <<EOF
+    192.168.1.133:/mnt/user/Movies	/mnt/Movies	nfs	defaults	0	0
+    192.168.1.133:/mnt/user/TV	/mnt/TV		nfs	defaults	0	0
+    192.168.1.133:/mnt/user/Downloads	/mnt/Downloads	nfs	defaults	0	0
+    192.168.1.133:/mnt/user/Disney\040Movies	/mnt/Disney\040Movies	nfs	defaults 0	0
+EOF
 }
 
 #error handling when a function fails
@@ -1040,7 +1052,8 @@ while true; do
     echo "21 - Enable UFW"
     echo "22 - Install CaC certs"
     echo "23 - Install Kubernetes"
-    echo "24 - Exit"
+    echo "24 - Customise fstab"
+    echo "25 - Exit"
     read -p "Enter your choice: " choice
     
     case $choice in
@@ -1067,7 +1080,8 @@ while true; do
         21) function_status enable_UFW;;
         22) function_status install_cac;;
         23) function_status install_kubernetes;;
-        24) echo "Exiting script."; break;;
+        24) function_status custom_fstab;;
+        25) echo "Exiting script."; break;;
         *) echo "Invalid option: $choice";;
     esac
 
