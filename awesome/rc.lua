@@ -658,5 +658,6 @@ end)
 beautiful.useless_gap = 5
 -- Autostart Applications
 awful.spawn.with_shell("compton --config $HOME/.config/compton.conf --daemon")
-awful.spawn.with_shell("nitrogen --restore")
+--redundant
+--awful.spawn.with_shell("nitrogen --restore")
 awful.spawn.with_shell("~/.config/display.sh")

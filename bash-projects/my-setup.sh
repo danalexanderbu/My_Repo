@@ -47,6 +47,7 @@ function apt_installs() {
         "nmap" "Network exploration tool and security scanner" ON \
         "jq" "Json Query language interpreter" ON \
         "compton" "Compositor for AwesomeWM" OFF \
+        "gnome-themes-extra" "GNOME extra themes" ON \
         "nitrogen" "Wallpaper manager for AwesomeWM" OFF \
         "dmenu" "Better menu for startup in AwesomeWM" OFF\
         "samba" "SMB/CIFS file, print, and login server for Unix" ON \
@@ -96,6 +97,16 @@ function_awesomewm() {
     sudo cp -r ~/Documents/My_Repo/awesome/awesome-wm-widgets ~/.config/awesome/awesome-wm-widgets
     sudo cp  ~/Documents/My_Repo/awesome/compton.conf ~/.config/compton.conf
     sudo cp  ~/Documents/My_Repo/awesome/display.sh ~/.config/display.sh
+    cat << EOF > /usr/share/xsessions/awesome.desktop
+    [Desktop Entry]
+    Name=awesome
+    Comment=Highly configurable framework window manager
+    TryExec=awesome
+    Exec=awesome
+    Type=Application
+    Icon=/usr/share/pixmaps/awesome.xpm
+    Keywords=Window manager
+EOF
 }
 
 function remove_packages() {
@@ -119,6 +130,7 @@ function remove_packages() {
         "nmap" "Network exploration tool and security scanner" OFF
         "samba" "SMB/CIFS file, print, and login server for Unix" OFF \
         "gnome-keyring" "GNOME keyring services" OFF \
+        "gnome-themes-extra" "GNOME extra themes" OFF \
         "apt-transport-https" "APT transport for downloading via the HTTPS protocol" OFF \
         "docker.io" "Container platform tool" OFF \
         "gnupg2" "GNU privacy guard - modern version" OFF \
