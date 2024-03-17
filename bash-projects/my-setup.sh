@@ -48,7 +48,7 @@ function apt_installs() {
         "jq" "Json Query language interpreter" ON \
         "compton" "Compositor for AwesomeWM" OFF \
         "gnome-themes-extra" "GNOME extra themes" ON \
-        "nitrogen" "Wallpaper manager for AwesomeWM" OFF \
+        "nitrogen" "Wallpaper manager for AwesomeWM" ON \
         "dmenu" "Better menu for startup in AwesomeWM" OFF\
         "samba" "SMB/CIFS file, print, and login server for Unix" ON \
         "gnome-keyring" "GNOME keyring services" ON \
