@@ -5,6 +5,15 @@
 #The update_firefox function is intended to be run as root as Debian does not allow the user to update firefox automatically
 #This has been tested on Debian 12 (Bookworm)
 #If you have a problem with CAC setup try opening firefox and chrome and then rerunning the script
+# Detect distro
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    DISTRO=$ID
+else
+    echo "Cannot determine the distribution. Exiting."
+    exit 1
+fi
+
 function blacklist_nouveau() {
     # Inform the user about the action being taken
     echo "The nouveau driver will be blacklisted. This should be checked if using an Nvidia GPU."
@@ -19,10 +28,35 @@ function blacklist_nouveau() {
 
 function add_repositories() {
      # Display a notice about the action being taken
-    echo "Adding non-free and contrip repositories"
+    echo "Adding repositories"
     
-    sudo add-apt-repository non-free -y
-    sudo add-apt-repository contrib non-free -y
+  case $DISTRO in
+        ubuntu|debian)
+            sudo add-apt-repository non-free -y
+            sudo add-apt-repository contrib non-free -y
+            sudo apt update
+            ;;
+        centos|rhel|fedora)
+            sudo yum-config-manager --enable extras
+            sudo yum-config-manager --add-repo https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm
+            sudo yum-config-manager --add-repo https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm
+            sudo yum update
+            ;;
+        arch|manjaro)
+            sudo pacman -Syu
+            # Adding AUR support, assuming 'yay' is installed
+            yay -Syu
+            ;;
+        suse|opensuse)
+            sudo zypper ar -f https://download.opensuse.org/repositories/home:/Kenzy:/experimental/openSUSE_Tumbleweed/home:Kenzy:experimental.repo
+            sudo zypper ar -f https://download.opensuse.org/repositories/non-oss/repo/non-oss.repo
+            sudo zypper refresh
+            ;;
+        *)
+            echo "Unsupported distribution: $DISTRO. Exiting."
+            exit 1
+            ;;
+    esac
 }
 
 function apt_installs() {
@@ -73,13 +107,34 @@ function apt_installs() {
     for ((i=0; i<${#packages[@]}; i+=3)); do
         if [ "${packages[i+2]}" == "ON" ]; then
             pkg=${packages[i]}
-            if ! dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
-                sudo apt install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
-            fi
+            case $DISTRO in
+                ubuntu|debian)
+                    if ! dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
+                        sudo apt install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
+                    fi
+                    ;;
+                centos|fedora|rhel)
+                    if ! rpm -q "$pkg" &>/dev/null; then
+                        sudo yum install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
+                    fi
+                    ;;
+                arch|manjaro)
+                    if ! pacman -Q "$pkg" &>/dev/null; then
+                        sudo pacman -S "$pkg" --noconfirm || { echo "Failed to install $pkg"; exit 1; }
+                    fi
+                    ;;
+                opensuse)
+                    if ! zipper se --installed-only "$pkg" &>/dev/null; then
+                        sudo zipper se "$pkg" --noconfirm || { echo "Failed to install $pkg"; exit 1; }
+                    fi
+                *)
+                    echo "Unsupported distribution: $DISTRO. Exiting."
+                    exit 1
+                    ;;
+            esac
         fi
     done
     echo "Installed ${packages[@]}"
-
 }
 
 function_awesomewm() {
@@ -165,7 +220,7 @@ function remove_packages() {
     for ((i=0; i<${#installed_packages[@]}; i+=3)); do
         if [ "${installed_packages[i+2]}" == "OFF" ]; then
             pkg="${installed_packages[i]}"
-            if dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
+            if is_package_installed "$pkg"; then
                 to_remove+=("$pkg")
             fi
         fi
@@ -179,14 +234,29 @@ function remove_packages() {
 
     echo "Removing the following packages: ${to_remove[*]}"
     for pkg in "${to_remove[@]}"; do
-        sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
+        case $DISTRO in
+            ubuntu|debian)
+                sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
+                ;;
+            centos|fedora|rhel)
+                sudo yum remove "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
+                ;;
+            arch|manjaro)
+                sudo pacman -R "$pkg" --noconfirm || { echo "Failed to remove $pkg"; exit 1; }
+                ;;
+            suse|opensuse)
+                sudo zypper rm "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
+                ;;
+            *)
+                echo "Unsupported distribution: $DISTRO. Exiting."
+                exit 1
+                ;;
+        esac
     done
-
-    sudo apt autoremove -y
 }
 
 function download_and_install_deb() {
-    cd $HOME/Downloads
+    cd $HOME/Downloads || exit
     declare -a urls=(
         "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
         "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
@@ -207,7 +277,25 @@ function download_and_install_deb() {
                 file_name=$(basename "$package_url")
                 wget "$package_url" -O "$file_name"
                 echo "Successfully downloaded $file_name"
-                sudo dpkg -i "$file_name" && sudo apt --fix-broken install -y
+                case $DISTRO in
+                    ubuntu|debian)
+                        sudo dpkg -i "$file_name" && sudo apt --fix-broken install -y
+                        ;;
+                    centos|rhel|fedora)
+                        sudo rpm -ivh "$file_name" || sudo yum install -y "$file_name"
+                        ;;
+                    arch|manjaro)
+                        sudo pacman -U "$file_name" --noconfirm
+                        ;;
+                    suse|opensuse)
+                        sudo zypper install -y "$file_name"
+                        ;;
+                    *)
+                        echo "Unsupported distribution: $DISTRO. Exiting."
+                        rm "$file_name"
+                        exit 1
+                        ;;
+                esac
                 echo "Successfully installed $file_name"
                 rm "$file_name"
                 ;;
@@ -219,17 +307,26 @@ function download_and_install_deb() {
         fi
     done
 
-    sudo apt update -y && sudo apt --fix-broken install && sudo apt upgrade -y
+    case $DISTRO in
+        ubuntu|debian)
+            sudo apt update -y && sudo apt --fix-broken install && sudo apt upgrade -y
+            ;;
+        centos|rhel|fedora)
+            sudo yum update -y || sudo dnf update -y
+            ;;
+        arch|manjaro)
+            sudo pacman -Syu --noconfirm
+            ;;
+        suse|opensuse)
+            sudo zypper refresh
+            ;;
+    esac
+
     cd $HOME
 }
 
 function install_kubernetes() {
     #install kubernetes with kubeadm and containerd
-    curl  -fsSL  https://packages.cloud.google.com/apt/doc/apt-key.gpg|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kubernetes.gpg
-    echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-    sudo apt update
-    sudo apt install kubelet kubeadm kubectl -y
-    sudo apt-mark hold kubelet kubeadm kubectl
     sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
     sudo swapoff -a
     # Enable kernel modules
@@ -242,23 +339,59 @@ function install_kubernetes() {
     net.bridge.bridge-nf-call-iptables = 1
     net.ipv4.ip_forward = 1
 EOF
+    sudo sysctl --system
 
     # Reload sysctl
-    sudo sysctl --system
+    case $DISTRO in
+        ubuntu|debian)
+            # Add Kubernetes repository
+            curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/kubernetes.gpg
+            echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+            sudo apt update
+            sudo apt install -y kubelet kubeadm kubectl containerd.io
+            sudo apt-mark hold kubelet kubeadm kubectl
+            ;;
+        centos|rhel|fedora)
+            # Add Kubernetes repository
+            cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+            sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+            sudo systemctl enable --now kubelet
+            ;;
+        arch)
+            # Install Kubernetes and containerd from Arch repositories
+            sudo pacman -Syu --noconfirm
+            sudo pacman -S --noconfirm kubelet kubeadm kubectl containerd
+            sudo systemctl enable --now kubelet
+            ;;
+        opensuse|suse)
+            # Add Kubernetes repository
+            sudo zypper ar https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$DISTRO/devel:kubic:libcontainers:stable.repo
+            sudo zypper ar https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.21/$DISTRO/devel:kubic:libcontainers:stable:cri-o:1.21.repo
+            sudo zypper ref
+            sudo zypper install -y kubelet kubeadm kubectl containerd
+            sudo systemctl enable --now kubelet
+            ;;
+        *)
+            echo "Unsupported distribution: $DISTRO. Exiting."
+            exit 1
+            ;;
+    esac
     curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt update
-    sudo apt install -y containerd.io
     sudo mkdir -p /etc/containerd
-    sudo containerd config default|sudo tee /etc/containerd/config.toml
+    sudo containerd config default | sudo tee /etc/containerd/config.toml
     sudo systemctl restart containerd
     sudo systemctl enable containerd
-    systemctl status  containerd
-    sudo systemctl enable kubelet
-    sudo systemctl start kubelet
     sudo kubeadm config images pull --cri-socket unix:///run/containerd/containerd.sock
-    sudo sysctl -p
-    sudo kubeadm init > ~/kubeadm-init.log
+    sudo kubeadm init --cri-socket unix:///run/containerd/containerd.sock | tee $HOME/kubeadm-init.log
     mkdir -p $HOME/.kube
     sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     sudo chown $(id -u):$(id -g) $HOME/.kube/config
@@ -272,10 +405,10 @@ function install_btop() {
 
     if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         cd $HOME/Downloads
-        latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .assets[11].browser_download_url)
+               latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r '.assets[] | select(.name | contains("x86_64")) | .browser_download_url')
         
         # Check if the curl command was successful
-        if [ $? -ne 0 ]; then
+        if [ -z "$latest_release_btop" ]; then
             echo "Failed to fetch the latest release URL for btop."
             return 1
         fi
@@ -293,7 +426,7 @@ function install_btop() {
         
         tar -xjf "$btop_file_name"
         cd btop
-        ./install.sh
+        sudo ./install.sh
         
         # Check if the installation was successful
         if [ $? -ne 0 ]; then
@@ -303,12 +436,11 @@ function install_btop() {
         
         echo "Successfully installed btop"
         
-        cd $HOME/Downloads
+        cd $HOME/Downloads || exit
         rm -r "$btop_file_name"
     else
         echo "btop installation cancelled."
     fi
-    sudo apt --fix-broken install -y
 }
 
 function install_firefox() {
@@ -335,37 +467,110 @@ function install_firefox() {
     fi
 }
 
-
-function install_thorium-browser() {
+function install_thorium_browser() {
     local response
     echo "This will install Thorium web browser. Do you want to continue? [y/n]"
     read -r response
 
-    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
-        cd $HOME/Downloads
-        wget https://dl.thorium.rocks/debian/dists/stable/thorium.list && sudo mv thorium.list /etc/apt/sources.list.d/ && sudo apt update
-        sudo apt install thorium-browser -y
+    if [[ "$response" = "y" || "$response" = "Y" ]]; then
+        cd $HOME/Downloads || exit
+
+        case $DISTRO in
+            ubuntu|debian)
+                wget https://dl.thorium.rocks/debian/dists/stable/thorium.list
+                sudo mv thorium.list /etc/apt/sources.list.d/
+                wget -qO - https://dl.thorium.rocks/debian/dists/stable/thorium.asc | sudo apt-key add -
+                sudo apt update
+                sudo apt install thorium-browser -y
+                ;;
+            centos|rhel|fedora)
+                sudo tee /etc/yum.repos.d/thorium.repo <<EOF
+[thorium]
+name=Thorium Browser
+baseurl=https://dl.thorium.rocks/rpm/stable/x86_64
+enabled=1
+gpgcheck=1
+gpgkey=https://dl.thorium.rocks/rpm/stable/x86_64/thorium.asc
+EOF
+                sudo yum install thorium-browser -y
+                ;;
+            arch|manjaro)
+                git clone https://aur.archlinux.org/thorium-browser-bin.git
+                cd thorium-browser-bin
+                makepkg -si --noconfirm
+                cd ..
+                rm -rf thorium-browser-bin
+                ;;
+            suse|opensuse)
+                sudo zypper ar https://dl.thorium.rocks/rpm/stable/x86_64 thorium
+                sudo rpm --import https://dl.thorium.rocks/rpm/stable/x86_64/thorium.asc
+                sudo zypper refresh
+                sudo zypper install thorium-browser -y
+                ;;
+            *)
+                echo "Unsupported distribution: $DISTRO. Exiting."
+                exit 1
+                ;;
+        esac
+
         echo "Thorium web browser has been installed successfully."
-        cd $HOME
+        cd $HOME || exit
     else
         echo "Installation canceled by user."
     fi
-    sudo apt --fix-broken install -y
 }
 
-
-function install_google-chrome() {
+function install_google_chrome() {
     local response
     echo "This will install Google Chrome. Do you want to continue? [y/n]"
     read -r response
 
-    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
-        cd $HOME/Downloads
-        curl https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o google-chrome-stable_current_amd64.deb
-        sudo dpkg -i google-chrome-stable_current_amd64.deb
-        rm google-chrome-stable_current_amd64.deb
-        sudo apt --fix-broken install -y
+    if [[ "$response" = "y" || "$response" = "Y" ]]; then
+        cd $HOME/Downloads || exit
+
+        case $DISTRO in
+            ubuntu|debian)
+                curl -O https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+                sudo dpkg -i google-chrome-stable_current_amd64.deb
+                sudo apt-get install -f -y
+                rm google-chrome-stable_current_amd64.deb
+                ;;
+            centos|rhel|fedora)
+                sudo tee /etc/yum.repos.d/google-chrome.repo <<EOF
+[google-chrome]
+name=google-chrome
+baseurl=http://dl.google.com/linux/chrome/rpm/stable/x86_64
+enabled=1
+gpgcheck=1
+gpgkey=https://dl.google.com/linux/linux_signing_key.pub
+EOF
+                sudo yum install -y google-chrome-stable
+                ;;
+            arch|manjaro)
+                if ! command -v yay &> /dev/null; then
+                    echo "yay AUR helper is not installed. Installing yay..."
+                    git clone https://aur.archlinux.org/yay.git
+                    cd yay
+                    makepkg -si --noconfirm
+                    cd ..
+                    rm -rf yay
+                fi
+                yay -S --noconfirm google-chrome
+                ;;
+            suse|opensuse)
+                sudo zypper ar http://dl.google.com/linux/chrome/rpm/stable/x86_64 Google-Chrome
+                sudo rpm --import https://dl.google.com/linux/linux_signing_key.pub
+                sudo zypper ref
+                sudo zypper install -y google-chrome-stable
+                ;;
+            *)
+                echo "Unsupported distribution: $DISTRO. Exiting."
+                exit 1
+                ;;
+        esac
+
         echo "Google Chrome has been installed successfully."
+        cd $HOME || exit
     else
         echo "Installation canceled by user."
     fi
@@ -403,18 +608,103 @@ EOF
     fi
 }
 
-function install_brave-browser () {
+function install_brave_browser() {
     local response
     echo "This will install Brave browser. Do you want to continue? [y/n]"
     read -r response
 
-    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
-        sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-        sudo apt update -y && sudo apt install brave-browser -y
-        sudo apt --fix-broken install -y
+    if [[ "$response" = "y" || "$response" = "Y" ]]; then
+        case $DISTRO in
+            ubuntu|debian)
+                sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+                echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+                sudo apt update -y
+                sudo apt install brave-browser -y
+                sudo apt --fix-broken install -y
+                ;;
+            centos|rhel|fedora)
+                sudo dnf install dnf-plugins-core -y
+                sudo dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
+                sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+                sudo dnf install brave-browser -y
+                ;;
+            arch|manjaro)
+                if ! command -v yay &> /dev/null; then
+                    echo "yay AUR helper is not installed. Installing yay..."
+                    git clone https://aur.archlinux.org/yay.git
+                    cd yay
+                    makepkg -si --noconfirm
+                    cd ..
+                    rm -rf yay
+                fi
+
+                echo "Checking available versions of Brave browser..."
+
+                available_versions=()
+
+                if yay -Ss brave-bin &> /dev/null; then
+                    available_versions+=("Stable (brave-bin)")
+                fi
+                if yay -Ss brave-beta-bin &> /dev/null; then
+                    available_versions+=("Beta (brave-beta-bin)")
+                fi
+                if yay -Ss brave-nightly-bin &> /dev/null; then
+                    available_versions+=("Nightly (brave-nightly-bin)")
+                fi
+                if pacman -Ss brave-browser &> /dev/null; then
+                    available_versions+=("Stable (pacman -S brave-browser)")
+                fi
+                if pacman -Ss brave-browser-beta &> /dev/null; then
+                    available_versions+=("Beta (pacman -S brave-browser-beta)")
+                fi
+
+                if [ ${#available_versions[@]} -eq 0 ]; then
+                    echo "No available versions of Brave browser found."
+                    return 1
+                fi
+
+                echo "Select the version of Brave browser to install:"
+                select version in "${available_versions[@]}"; do
+                    case $version in
+                        "Stable (brave-bin)")
+                            yay -S --noconfirm brave-bin
+                            ;;
+                        "Beta (brave-beta-bin)")
+                            yay -S --noconfirm brave-beta-bin
+                            ;;
+                        "Nightly (brave-nightly-bin)")
+                            yay -S --noconfirm brave-nightly-bin
+                            ;;
+                        "Stable (pacman -S brave-browser)")
+                            sudo pacman -S --noconfirm brave-browser
+                            ;;
+                        "Beta (pacman -S brave-browser-beta)")
+                            sudo pacman -S --noconfirm brave-browser-beta
+                            ;;
+                        *)
+                            echo "Invalid option. Installation canceled."
+                            return 1
+                            ;;
+                    esac
+                    break
+                done
+                ;;
+            suse|opensuse)
+                sudo zypper install -y curl
+                sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+                sudo zypper addrepo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
+                sudo zypper refresh
+                sudo zypper install -y brave-browser
+                ;;
+            *)
+                echo "Unsupported distribution: $DISTRO. Exiting."
+                exit 1
+                ;;
+        esac
+
+        echo "Brave browser has been installed successfully."
     else
-        echo "Installation canceled by user"
+        echo "Installation canceled by user."
     fi
 }
 
@@ -428,15 +718,35 @@ function install_flatpak_and_bottles () {
     echo "This will install Flatpak and Bottles. Do you want to continue? [y/n]"
     read -r response
 
-    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
-        sudo apt install flatpak -y
-        sudo apt install plasma-discover-backend-flatpak -y
+    if [[ "$response" = "y" || "$response" = "Y" ]]; then
+        case $DISTRO in
+            ubuntu|debian)
+                sudo apt update -y
+                sudo apt install flatpak -y
+                sudo apt install gnome-software-plugin-flatpak -y
+                sudo apt install plasma-discover-backend-flatpak -y
+                ;;
+            centos|rhel|fedora)
+                sudo yum install -y flatpak
+                ;;
+            arch|manjaro)
+                sudo pacman -Syu --noconfirm
+                ;;
+            suse|opensuse)
+                sudo zypper install -y flatpak
+                ;;
+            *)
+                echo "Unsupported distribution: $DISTRO. Exiting."
+                exit 1
+                ;;
+        esac
         flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
         flatpak install flathub com.usebottles.bottles -y
+
+        echo "Flatpak and Bottles have been installed successfully."
     else
-        echo "Installation canceled by user"
+        echo "Installation canceled by user."
     fi
-    sudo apt --fix-broken install -y
 }
 
 function install_protonGE () {
@@ -483,7 +793,7 @@ function install_protonGE () {
 }
 
 function install_obsidian () {
-    for cmd in curl jq; do
+    for cmd in curl jq wget; do
         if ! command -v $cmd &> /dev/null; then
             echo "$cmd could not be found. Please install it and try again."
             return 1
@@ -494,12 +804,45 @@ function install_obsidian () {
     echo "Do you want to install Obsidian? [y/n]"
     read -r response
     if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
-        latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
-        wget "$latest_release_url_Obsidian"
-        file_name=$(basename "$latest_release_url_Obsidian")
-        sudo dpkg -i "$file_name"
-        rm "$file_name"
-        sudo apt --fix-broken install -y
+        case $DISTRO in
+            ubuntu|debian)
+                latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url')
+                wget "$latest_release_url_Obsidian"
+                file_name=$(basename "$latest_release_url_Obsidian")
+                sudo dpkg -i "$file_name"
+                rm "$file_name"
+                sudo apt --fix-broken install -y
+                ;;
+            centos|rhel|fedora)
+                latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".rpm")) | .browser_download_url')
+                wget "$latest_release_url_Obsidian"
+                file_name=$(basename "$latest_release_url_Obsidian")
+                sudo yum install -y "$file_name"
+                rm "$file_name"
+                ;;
+            arch|manjaro)
+                if ! command -v yay &> /dev/null; then
+                    echo "yay AUR helper is not installed. Installing yay..."
+                    git clone https://aur.archlinux.org/yay.git
+                    cd yay
+                    makepkg -si --noconfirm
+                    cd ..
+                    rm -rf yay
+                fi
+                yay -S --noconfirm obsidian
+                ;;
+            suse|opensuse)
+                latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".rpm")) | .browser_download_url')
+                wget "$latest_release_url_Obsidian"
+                file_name=$(basename "$latest_release_url_Obsidian")
+                sudo zypper install -y "$file_name"
+                rm "$file_name"
+                ;;
+            *)
+                echo "Unsupported distribution: $DISTRO. Exiting."
+                exit 1
+                ;;
+        esac
         echo "Obsidian has been installed successfully."
     else
         echo "Installation cancelled by user."
@@ -511,31 +854,52 @@ function install_virtualbox () {
     local response
     echo "Do you want to install VirtualBox? [y/n]"
     read -r response
-    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
-        cd $HOME/Downloads
-        # Add the Oracle VBox 2016 public key
-        if dpkg -l | grep virtualbox > /dev/null; then
-            echo "VirtualBox is already installed. Do you want to continue and reinstall? [y/n]"
-            read -r response
-            if [ "$response" != "y" ] && [ "$response" != "Y" ]; then
-                echo "Exiting script."
-                return 0
-            fi
-        fi
+    if [[ "$response" = "y" || "$response" = "Y" ]]; then
+        cd $HOME/Downloads || exit
+
+        # Add the Oracle VBox public keys
         curl -fsSL https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/vbox.gpg
-        # Add the Oracle VBox public key
         curl -fsSL https://www.virtualbox.org/download/oracle_vbox.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/oracle_vbox.gpg
-        # Add the VirtualBox repository to the system's APT source list
-        # "$(lsb_release -cs)" dynamically gets the codename of your Debian distribution.
-        echo "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
-        # Update the local package index to include the new VirtualBox repository
-        sudo apt update
-        # Install the Linux headers and dkms for the current running kernel
-        sudo apt install linux-headers-$(uname -r) dkms -y
-        # Install latest version of VirtualBox
-        VB_LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'VirtualBox-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-        sudo apt install virtualbox-$VB_LATEST_VERSION -y
-        # Download the latest Oracle VM VirtualBox Extension Pack
+
+        case $DISTRO in
+            ubuntu|debian)
+                # Add the VirtualBox repository to the system's APT source list
+                echo "deb [arch=amd64] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
+                # Update the local package index to include the new VirtualBox repository
+                sudo apt update
+                # Install the Linux headers and dkms for the current running kernel
+                sudo apt install linux-headers-$(uname -r) dkms -y
+                # Install VirtualBox
+                sudo apt install virtualbox-6.1 -y
+                ;;
+            centos|rhel|fedora)
+                # Add the VirtualBox repository to the system's YUM source list
+                sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo rpm --import -
+                sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo rpm --import -
+                sudo yum-config-manager --add-repo=http://download.virtualbox.org/virtualbox/rpm/el/virtualbox.repo
+                sudo yum update -y
+                # Install the Linux headers and dkms for the current running kernel
+                sudo yum install kernel-devel-$(uname -r) kernel-headers-$(uname -r) dkms -y
+                # Install VirtualBox
+                sudo yum install VirtualBox-6.1 -y
+                ;;
+            arch|manjaro)
+                # Install VirtualBox from the community repository
+                sudo pacman -Syu --noconfirm
+                sudo pacman -S --noconfirm virtualbox virtualbox-host-modules-arch
+                sudo modprobe vboxdrv
+                ;;
+            suse|opensuse)
+                # Add the VirtualBox repository to the system's zypper source list
+                sudo zypper addrepo https://download.virtualbox.org/virtualbox/rpm/opensuse/virtualbox.repo
+                sudo zypper refresh
+                sudo zypper install --auto-agree-with-licenses virtualbox
+                ;;
+            *)
+                echo "Unsupported distribution: $DISTRO. Exiting."
+                exit 1
+                ;;
+        esac
         LATEST_VERSION=$(curl -s https://www.virtualbox.org/wiki/Downloads | grep -oP 'Oracle_VM_VirtualBox_Extension_Pack-\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
         wget "https://download.virtualbox.org/virtualbox/$LATEST_VERSION/Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack" -O "Oracle_VM_VirtualBox_Extension_Pack-$LATEST_VERSION.vbox-extpack"
         # Install the Oracle VM VirtualBox Extension Pack
