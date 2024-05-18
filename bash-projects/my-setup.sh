@@ -127,6 +127,7 @@ function apt_installs() {
                     if ! zipper se --installed-only "$pkg" &>/dev/null; then
                         sudo zipper se "$pkg" --noconfirm || { echo "Failed to install $pkg"; exit 1; }
                     fi
+                    ;;
                 *)
                     echo "Unsupported distribution: $DISTRO. Exiting."
                     exit 1
