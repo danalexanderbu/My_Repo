@@ -277,8 +277,7 @@ run_firefox ()
 # Discovery of browsers installed on the user's system
 # Sets appropriate flags to control the flow of the installation, depending on
 # what is needed for the individual user
-browser_check ()
-{
+browser_check () {
     print_info "Checking for Firefox and Chrome..."
     check_for_firefox
     check_for_chrome
@@ -288,13 +287,9 @@ browser_check ()
     then
         print_err "No version of Mozilla Firefox OR Google Chrome has been detected."
         print_info "Please install either or both to proceed."
-
         exit "$E_BROWSER"
-
-    elif [ "$ff_exists" == true ] # Firefox was found
-    then
-        if [ "$snap_ff" == true ] # Snap version of Firefox
-        then
+    elif [ "$ff_exists" == true ]; then
+        if [ "$snap_ff" == true ]; then
             echo -e "
             ********************${ERR_COLOR}[ WARNING ]${NO_COLOR}********************
             * The version of Firefox you have installed       *
@@ -317,21 +312,17 @@ browser_check ()
 
             # Prompt user to elect to replace snap firefox with apt firefox
             choice=''
-            while [ "$choice" != "y" ] && [ "$choice" != "n" ]
-            do
+            while [ "$choice" != "y" ] && [ "$choice" != "n" ]; then
                 echo -e "\nWould you like to switch to the apt version of Firefox? ${INFO_COLOR}(y/n)${NO_COLOR}"
                 read -rp '> ' choice
             done
 
-            if [ "$choice" == "y" ]
-            then
+            if [ "$choice" == "y" ]; then
                 reconfigure_firefox
             else
-                if [ $chrome_exists == false ]
-                then
+                if [ "$chrome_exists" == false ]; then
                     print_info "You have elected to keep the snap version of Firefox.\n"
                     print_err "You have no compatible browsers. Exiting..."
-
                     exit $E_BROWSER
                 fi
             fi
