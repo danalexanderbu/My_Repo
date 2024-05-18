@@ -57,8 +57,41 @@ main ()
 
     # Install middleware and necessary utilities
     print_info "Installing middleware..."
-    apt update
-    DEBIAN_FRONTEND=noninteractive apt install -y libpcsclite1 pcscd libccid libpcsc-perl pcsc-tools libnss3-tools unzip wget
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        DISTRO=$ID
+    else
+        echo "Cannot determine the distribution. Exiting."
+        exit 1
+    fi
+
+    case $DISTRO in
+        ubuntu|debian)
+            sudo apt update -y
+            sudo DEBIAN_FRONTEND=noninteractive apt install -y libpcsclite1 pcscd libccid libpcsc-perl pcsc-tools libnss3-tools unzip wget
+            ;;
+        centos|rhel)
+            sudo yum update -y
+            sudo yum install -y pcsc-lite pcsc-lite-libs ccid perl-PCSC pcsc-tools nss-tools unzip wget
+            ;;
+        fedora)
+            sudo dnf update -y
+            sudo dnf install -y pcsc-lite pcsc-lite-libs ccid perl-PCSC pcsc-tools nss-tools unzip wget
+            ;;
+        arch|manjaro)
+            sudo pacman -Syu --noconfirm
+            sudo pacman -S --noconfirm pcsclite ccid perl-pcsc-tools nss unzip wget
+            ;;
+        opensuse|suse)
+            sudo zypper refresh
+            sudo zypper install -y pcsc-lite libpcsclite1 ccid perl-PCSC pcsc-tools mozilla-nss-tools unzip wget
+            ;;
+        *)
+            echo "Unsupported distribution: $DISTRO. Exiting."
+            exit 1
+            ;;
+    esac
+
     print_info "Done"
 
     # Pull all necessary files
@@ -68,28 +101,105 @@ main ()
     print_info "Done."
 
     # Install libcackey.
-    if [ -e "$DWNLD_DIR/$PKG_FILENAME" ]
-    then
+    if [ -e "$DWNLD_DIR/$PKG_FILENAME" ]; then
         print_info "Installing libcackey..."
-        if dpkg -i "$DWNLD_DIR/$PKG_FILENAME"
-        then
-            print_info "Done."
-        else
-            print_err "Installation failed. Exiting..."
-
-            exit "$E_INSTALL"
-        fi
+        case $DISTRO in
+            ubuntu|debian)
+                if sudo dpkg -i "$DWNLD_DIR/$PKG_FILENAME"; then
+                    print_info "Done."
+                else
+                    print_err "Installation failed. Exiting..."
+                    exit "$E_INSTALL"
+                fi
+                ;;
+            centos|rhel|fedora)
+                if sudo yum localinstall -y "$DWNLD_DIR/$PKG_FILENAME"; then
+                    print_info "Done."
+                else
+                    print_err "Installation failed. Exiting..."
+                    exit "$E_INSTALL"
+                fi
+                ;;
+            arch|manjaro)
+                if sudo pacman -U --noconfirm "$DWNLD_DIR/$PKG_FILENAME"; then
+                    print_info "Done."
+                else
+                    print_err "Installation failed. Exiting..."
+                    exit "$E_INSTALL"
+                fi
+                ;;
+            opensuse|suse)
+                if sudo zypper install -y "$DWNLD_DIR/$PKG_FILENAME"; then
+                    print_info "Done."
+                else
+                    print_err "Installation failed. Exiting..."
+                    exit "$E_INSTALL"
+                fi
+                ;;
+            *)
+                print_err "Unsupported distribution: $DISTRO. Exiting..."
+                exit "$E_INSTALL"
+                ;;
+        esac
+    else
+        print_err "Package file not found. Exiting..."
+        exit "$E_INSTALL"
     fi
 
     # Prevent cackey from upgrading.
     # If cackey upgrades beyond 7.5, it moves libcackey.so to a different location,
     # breaking Firefox. Returning libcackey.so to the original location does not
     # seem to fix this issue.
-    if apt-mark hold cackey
-    then
-        print_info "Hold placed on cackey package"
+    if [ -e "$DWNLD_DIR/$PKG_FILENAME" ]; then
+        print_info "Installing libcackey..."
+        case $DISTRO in
+            ubuntu|debian)
+                if sudo dpkg -i "$DWNLD_DIR/$PKG_FILENAME"; then
+                    print_info "Done."
+                    sudo apt-mark hold cackey
+                else
+                    print_err "Installation failed. Exiting..."
+                    exit "$E_INSTALL"
+                fi
+                ;;
+            centos|rhel|fedora)
+                if sudo yum localinstall -y "$DWNLD_DIR/$PKG_FILENAME"; then
+                    print_info "Done."
+                    # Mark package to not be updated
+                    sudo yum versionlock cackey
+                else
+                    print_err "Installation failed. Exiting..."
+                    exit "$E_INSTALL"
+                fi
+                ;;
+            arch|manjaro)
+                if sudo pacman -U --noconfirm "$DWNLD_DIR/$PKG_FILENAME"; then
+                    print_info "Done."
+                    # Mark package to not be updated
+                    sudo pacman -D --asdeps cackey
+                else
+                    print_err "Installation failed. Exiting..."
+                    exit "$E_INSTALL"
+                fi
+                ;;
+            opensuse|suse)
+                if sudo zypper install -y "$DWNLD_DIR/$PKG_FILENAME"; then
+                    print_info "Done."
+                    # Mark package to not be updated
+                    sudo zypper addlock cackey
+                else
+                    print_err "Installation failed. Exiting..."
+                    exit "$E_INSTALL"
+                fi
+                ;;
+            *)
+                print_err "Unsupported distribution: $DISTRO. Exiting..."
+                exit "$E_INSTALL"
+                ;;
+        esac
     else
-        print_err "Failed to place hold on cackey package"
+        print_err "Package file not found. Exiting..."
+        exit "$E_INSTALL"
     fi
 
     # Unzip cert bundle
@@ -349,18 +459,30 @@ check_for_chrome ()
 
 # Re-install the user's previous version of Firefox if the snap version was
 # removed in the process of this script.
-revert_firefox ()
-{
-    # Firefox was replaced, lets put it back where it was.
+revert_firefox () {
     print_err "No valid databases located. Reinstalling previous version of Firefox..."
-    apt purge firefox -y
-    snap install firefox
-
-    run_firefox
-
-    print_info "Completed. Exiting..."
-
-    # "Restore" old profile back to the snap version of Firefox
+    case $DISTRO in
+        ubuntu|debian)
+            sudo apt purge firefox -y
+            sudo snap install firefox
+            ;;
+        centos|rhel|fedora)
+            sudo yum remove firefox -y
+            sudo yum install firefox -y
+            ;;
+        arch|manjaro)
+            sudo pacman -R firefox --noconfirm
+            sudo pacman -S firefox --noconfirm
+            ;;
+        opensuse|suse)
+            sudo zypper remove -y firefox
+            sudo zypper install -y firefox
+            ;;
+        *)
+            print_err "Unsupported distribution: $DISTRO. Exiting..."
+            exit "$E_DATABASE"
+            ;;
+    esac
     migrate_ff_profile "restore"
 
     exit "$E_DATABASE"
