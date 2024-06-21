@@ -327,7 +327,7 @@ function download_and_install_deb() {
                         if [[ "$file_name" == *.rpm ]]; then
                             sudo rpm -ivh "$file_name" || sudo yum install -y "$file_name"
                         elif [[ "$file_name" == *.tar.gz ]]; then
-                            tar -xzvf "$file_name" -C /opt
+                            sudo tar -xzvf "$file_name" -C /opt
                         else
                             echo "Unsupported file format for $DISTRO"
                         fi
@@ -344,7 +344,7 @@ function download_and_install_deb() {
                         if [[ "$file_name" == *.rpm ]]; then
                             sudo zypper install -y "$file_name"
                         elif [[ "$file_name" == *.tar.gz ]]; then
-                            tar -xzvf "$file_name" -C /opt
+                            sudo tar -xzvf "$file_name" -C /opt
                         else
                             echo "Unsupported file format for $DISTRO"
                         fi
