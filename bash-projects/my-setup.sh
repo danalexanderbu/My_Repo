@@ -327,7 +327,8 @@ function download_and_install_deb() {
                         if [[ "$file_name" == *.rpm ]]; then
                             sudo rpm -ivh "$file_name" || sudo yum install -y "$file_name"
                         elif [[ "$file_name" == *.tar.gz ]]; then
-                            sudo tar -xzvf "$file_name" -C /opt
+                            sudo tar -xzvf "$file_name" -C /opt/
+                            sudo ln -sf /opt/${file_name%.tar.gz}/${file_name%.tar.gz} /usr/bin/${file_name%.tar.gz}
                         else
                             echo "Unsupported file format for $DISTRO"
                         fi
@@ -336,6 +337,7 @@ function download_and_install_deb() {
                     arch|manjaro)
                         if [[ "$file_name" == *.tar.gz ]]; then
                             tar -xzvf "$file_name" -C /opt
+                            sudo ln -sf /opt/${file_name%.tar.gz}/${file_name%.tar.gz} /usr/bin/${file_name%.tar.gz}
                         else
                             echo "Unsupported file format for $DISTRO"
                         fi
@@ -345,6 +347,7 @@ function download_and_install_deb() {
                             sudo zypper install -y "$file_name"
                         elif [[ "$file_name" == *.tar.gz ]]; then
                             sudo tar -xzvf "$file_name" -C /opt
+                            sudo ln -sf /opt/${file_name%.tar.gz}/${file_name%.tar.gz} /usr/bin/${file_name%.tar.gz}
                         else
                             echo "Unsupported file format for $DISTRO"
                         fi
@@ -872,11 +875,12 @@ function install_obsidian () {
                 rm "$file_name"
                 sudo apt --fix-broken install -y
                 ;;
-            centos|rhel|fedora|rocky)
-                latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".rpm")) | .browser_download_url')
+            centos|rhel|fedora|rocky|suse|opensuse)
+                latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".tar.gz") and (contains("arm64") | not)) | .browser_download_url')
                 wget "$latest_release_url_Obsidian"
                 file_name=$(basename "$latest_release_url_Obsidian")
-                sudo yum install -y "$file_name"
+                sudo tar -xzvf "$file_name" -C /opt
+                sudo ln -sf /opt/Obsidian-*/obsidian /usr/bin/obsidian
                 rm "$file_name"
                 ;;
             arch|manjaro)
@@ -891,7 +895,7 @@ function install_obsidian () {
                 yay -S --noconfirm obsidian
                 ;;
             suse|opensuse)
-                latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".rpm")) | .browser_download_url')
+                latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".tar.gz") and (contains("arm64") | not)) | .browser_download_url')
                 wget "$latest_release_url_Obsidian"
                 file_name=$(basename "$latest_release_url_Obsidian")
                 sudo zypper install -y "$file_name"
@@ -1054,22 +1058,22 @@ function install_git () {
     BUILDDIR=
     SKIPINSTALL=
     for i in "$@"; do 
-    case $i in 
-        -skiptests|--skip-tests) # Skip tests portion of the build
-        SKIPTESTS=YES
-        shift
-        ;;
-        -d=*|--build-dir=*) # Specify the directory to use for the build
-        BUILDDIR="${i#*=}"
-        shift
-        ;;
-        -skipinstall|--skip-install) # Skip dpkg install
-        SKIPINSTALL=YES
-        ;;
-        *)
-        #TODO Maybe define a help section?
-        ;;
-    esac
+        case $i in 
+            -skiptests|--skip-tests) # Skip tests portion of the build
+                SKIPTESTS=YES
+                shift
+                ;;
+            -d=*|--build-dir=*) # Specify the directory to use for the build
+                BUILDDIR="${i#*=}"
+                shift
+                ;;
+            -skipinstall|--skip-install) # Skip dpkg install
+                SKIPINSTALL=YES
+                ;;
+            *)
+            #TODO Maybe define a help section?
+                ;;
+        esac
     done
 
     # Use the specified build directory, or create a unique temporary directory
@@ -1079,50 +1083,49 @@ function install_git () {
     cd "${BUILDDIR}"
 
     # Download the source tarball from GitHub
-    sudo apt update
-    sudo apt install curl jq -y
+    if command -v yum &> /dev/null; then
+        sudo yum groupinstall "Development Tools" -y
+        sudo yum install curl-devel expat-devel gettext-devel openssl-devel perl-CPAN perl-devel zlib-devel -y
+        sudo yum remove gnutls -y
+    elif command -v apt-get &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install curl jq -y
+        sudo apt-get remove --purge libcurl4-gnutls-dev -y
+        sudo apt-get autoremove -y
+        sudo apt-get autoclean
+        sudo apt-get install build-essential autoconf dh-autoreconf libcurl4-openssl-dev tcl-dev gettext asciidoc libexpat1-dev libz-dev -y
+    else
+        echo "Unsupported package manager. Exiting."
+        exit 1
+    fi
+    
     git_tarball_url="$(curl --retry 5 "https://api.github.com/repos/git/git/tags" | jq -r '.[0].tarball_url')"
     curl -L --retry 5 "${git_tarball_url}" --output "git-source.tar.gz"
     tar -xf "git-source.tar.gz" --strip 1
 
-    # Source dependencies
-    # Don't use gnutls, this is the problem package.
-    if sudo apt remove --purge libcurl4-gnutls-dev -y; then
-    # Using apt-get for these commands, they're not supported with the apt alias on 14.04 (but they may be on later systems)
-    sudo apt autoremove -y
-    sudo apt autoclean
-    fi
-    # Meta-things for building on the end-user's machine
-    sudo apt install build-essential autoconf dh-autoreconf -y
-    # Things for the git itself
-    sudo apt install libcurl4-openssl-dev tcl-dev gettext asciidoc libexpat1-dev libz-dev -y
-
-    # Build it!
     make configure
-    # --prefix=/usr
-    #    Set the prefix based on this decision tree: https://i.stack.imgur.com/BlpRb.png
-    #    Not OS related, is software, not from package manager, has dependencies, and built from source => /usr
-    # --with-openssl
-    #    Running ripgrep on configure shows that --with-openssl is set by default. Since this could change in the
-    #    future we do it explicitly
     ./configure --prefix=/usr --with-openssl
     make 
     if [[ "${SKIPTESTS}" != "YES" ]]; then
-    make test
+        make test
     fi
 
     # Install
     if [[ "${SKIPINSTALL}" != "YES" ]]; then
-    # If you have an apt managed version of git, remove it
-    if sudo apt remove --purge git -y; then
-        sudo apt autoremove -y
-        sudo apt autoclean
+        # If you have an apt managed version of git, remove it
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get remove --purge git -y
+            sudo apt-get autoremove -y
+            sudo apt-get autoclean
+        fi
+        sudo make install
     fi
+
     # Install the version we just built
     sudo make install #install-doc install-html install-info
     echo "Make sure to refresh your shell!"
     bash -c 'echo "$(which git) ($(git --version))"'
-    fi
+
     cd $HOME
     mkdir ~/.mycerts
     cd ~/.mycerts
@@ -1498,9 +1501,9 @@ while true; do
         4) function_status remove_packages;;
         5) function_status download_and_install_deb;;
         6) function_status install_btop;;
-        7) function_status install_firefox-browser;;
-        8) function_status install_brave-browser;;
-        9) function_status install_google-chrome;;
+        7) function_status install_firefox;;
+        8) function_status install_brave_browser;;
+        9) function_status install_google_chrome;;
         10) function_status install_mullvad-browser;;
         11) function_status install_thorium-browser;;
         12) function_status update_firefox;;
