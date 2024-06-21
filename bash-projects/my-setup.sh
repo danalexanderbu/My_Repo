@@ -62,7 +62,7 @@ function add_repositories() {
 }
 
 function apt_installs() {
-    declare -a packages=(\
+    declare -a packages=(
         "libpcsclite1" "PC/SC Lite shared library" ON \
         "pcscd" "Middleware to access a smart card" ON \
         "libccid" "PC/SC driver for USB CCID smart card readers" ON \
@@ -86,7 +86,6 @@ function apt_installs() {
         "gnupg" "gnupg" ON \
         "gcc" "gcc" ON \
         "make" "make" ON \
-        "gnupg2" "gnupg" ON \
         "nmap" "Network exploration tool and security scanner" ON \
         "jq" "Json Query language interpreter" ON \
         "compton" "Compositor for AwesomeWM" OFF \
@@ -110,7 +109,27 @@ function apt_installs() {
         "mlocate" "Faster locate using database" ON \
         "kwalletmanager" "KDE wallet manager" OFF \
         "plasma-discover" "KDE Discover software store" OFF \
-        "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF
+        "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF \
+        "json-glib.i686" "Library for GLib JSON" ON \
+        "libdbusmenu.i686" "Library for dbusmenu" ON \
+        "fontconfig.i686" "Font configuration and customization library" ON \
+        "freetype.i686" "Free and portable font rendering engine" ON \
+        "glib2.i686" "Low-level core library" ON \
+        "gtk2.i686" "GIMP Toolkit for X11" ON \
+        "pango.i686" "Framework for the layout and rendering of i18n text" ON \
+        "glibc.i686" "GNU C Library" ON \
+        "alsa-lib.i686" "ALSA library" ON \
+        "alsa-plugins-pulseaudio.i686" "ALSA plugins for PulseAudio" ON \
+        "libXScrnSaver.i686" "X11 Screen Saver extension library" ON \
+        "libXtst.i686" "X11 Testing -- Resource extension library" ON \
+        "libatomic.i686" "GCC atomic library" ON \
+        "libcurl.i686" "libcurl library" ON \
+        "libdbusmenu-gtk3.i686" "Library for dbusmenu (GTK3)" ON \
+        "libpng12.i686" "PNG library (version 1.2)" ON \
+        "libvdpau.i686" "VDPAU library" ON \
+        "mesa-dri-drivers.i686" "mesa drivers" ON \
+        "mesa-libGL.i686" "mesa librarys" ON \
+        "nss.i686" ON 
     )
 
     for ((i=0; i<${#packages[@]}; i+=3)); do
@@ -147,7 +166,7 @@ function apt_installs() {
     echo "Installed ${packages[@]}"
 }
 
-function_awesomewm() {
+function awesomewm() {
     sudo apt install awesome nitrogen compton dmenu alacritty -y
     mkdir -p ~/.config/awesome
     mkdir -p ~/.config/alacritty
@@ -269,11 +288,20 @@ function download_and_install_deb() {
     cd $HOME/Downloads || exit
     declare -a urls=(
         "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
+        "https://dl.discordapp.net/apps/linux/0.0.57/discord-0.0.57.tar.gz"
         "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
+        "https://vscode.download.prss.microsoft.com/dbazure/download/stable/5437499feb04f7a586f677b155b039bc2b3669eb/code-1.90.2-1718751675.el8.x86_64.rpm"
         "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
+        "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors.x86_64.rpm"
         "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
+        "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.rpm"
         "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
+        "https://cdn.zoom.us/prod/6.1.0.198/zoom_x86_64.rpm"
         "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
+        "https://negativo17.org/repos/steam/epel-7/x86_64/libdbusmenu-gtk2-16.04.0-4.el7.i686.rpm"
+        "https://download1.rpmfusion.org/free/el/updates/8/x86_64/l/libva-intel-driver-2.1.0-4.el8.x86_64.rpm"
+        "https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm"
+        "https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm"
     )
 
     echo "Please select the package you want to download and install. Enter number (e.g., 1) or 0 to exit:"
@@ -289,16 +317,37 @@ function download_and_install_deb() {
                 echo "Successfully downloaded $file_name"
                 case $DISTRO in
                     ubuntu|debian)
-                        sudo dpkg -i "$file_name" && sudo apt --fix-broken install -y
+                        if [[ "$file_name" == *.deb ]]; then
+                            sudo dpkg -i "$file_name" && sudo apt --fix-broken install -y
+                        else
+                            echo "Unsupported file format for $DISTRO"
+                        fi
                         ;;
                     centos|rhel|fedora|rocky)
-                        sudo rpm -ivh "$file_name" || sudo yum install -y "$file_name"
+                        if [[ "$file_name" == *.rpm ]]; then
+                            sudo rpm -ivh "$file_name" || sudo yum install -y "$file_name"
+                        elif [[ "$file_name" == *.tar.gz ]]; then
+                            tar -xzvf "$file_name" -C /opt
+                        else
+                            echo "Unsupported file format for $DISTRO"
+                        fi
+                        sudo dnf install steam
                         ;;
                     arch|manjaro)
-                        sudo pacman -U "$file_name" --noconfirm
+                        if [[ "$file_name" == *.tar.gz ]]; then
+                            tar -xzvf "$file_name" -C /opt
+                        else
+                            echo "Unsupported file format for $DISTRO"
+                        fi
                         ;;
                     suse|opensuse)
-                        sudo zypper install -y "$file_name"
+                        if [[ "$file_name" == *.rpm ]]; then
+                            sudo zypper install -y "$file_name"
+                        elif [[ "$file_name" == *.tar.gz ]]; then
+                            tar -xzvf "$file_name" -C /opt
+                        else
+                            echo "Unsupported file format for $DISTRO"
+                        fi
                         ;;
                     *)
                         echo "Unsupported distribution: $DISTRO. Exiting."
