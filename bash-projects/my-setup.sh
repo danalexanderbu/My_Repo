@@ -36,10 +36,11 @@ function add_repositories() {
             sudo add-apt-repository contrib non-free -y
             sudo apt update
             ;;
-        centos|rhel|fedora)
+        centos|rhel|fedora|rocky)
             sudo yum-config-manager --enable extras
             sudo yum-config-manager --add-repo https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm
             sudo yum-config-manager --add-repo https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm
+            sudo yum install epel-release -y
             sudo yum update
             ;;
         arch|manjaro)
@@ -78,6 +79,13 @@ function apt_installs() {
         "vim" "Vi IMproved - enhanced vi editor" ON \
         "ethtool" "Utility for controlling network drivers and hardware" ON \
         "net-tools" "Networking tools" ON \
+        "open-jdk-17" "JDK17 support" ON \
+        "npm" "npm" ON \
+        "unzip" "unzip" ON \
+        "gnupg" "gnupg" ON \
+        "gcc" "gcc" ON \
+        "make" "make" ON \
+        "gnupg2" "gnupg" ON \
         "nmap" "Network exploration tool and security scanner" ON \
         "jq" "Json Query language interpreter" ON \
         "compton" "Compositor for AwesomeWM" OFF \
