@@ -121,7 +121,7 @@ function apt_installs() {
                         sudo apt install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
                     fi
                     ;;
-                centos|fedora|rhel)
+                centos|fedora|rhel|rocky)
                     if ! rpm -q "$pkg" &>/dev/null; then
                         sudo yum install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
                     fi
@@ -247,7 +247,7 @@ function remove_packages() {
             ubuntu|debian)
                 sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
                 ;;
-            centos|fedora|rhel)
+            centos|fedora|rhel|rocky)
                 sudo yum remove "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
                 ;;
             arch|manjaro)
@@ -290,7 +290,7 @@ function download_and_install_deb() {
                     ubuntu|debian)
                         sudo dpkg -i "$file_name" && sudo apt --fix-broken install -y
                         ;;
-                    centos|rhel|fedora)
+                    centos|rhel|fedora|rocky)
                         sudo rpm -ivh "$file_name" || sudo yum install -y "$file_name"
                         ;;
                     arch|manjaro)
@@ -320,7 +320,7 @@ function download_and_install_deb() {
         ubuntu|debian)
             sudo apt update -y && sudo apt --fix-broken install && sudo apt upgrade -y
             ;;
-        centos|rhel|fedora)
+        centos|rhel|fedora|rocky)
             sudo yum update -y || sudo dnf update -y
             ;;
         arch|manjaro)
@@ -360,7 +360,7 @@ EOF
             sudo apt install -y kubelet kubeadm kubectl containerd.io
             sudo apt-mark hold kubelet kubeadm kubectl
             ;;
-        centos|rhel|fedora)
+        centos|rhel|fedora|rocky)
             # Add Kubernetes repository
             cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -492,7 +492,7 @@ function install_thorium_browser() {
                 sudo apt update
                 sudo apt install thorium-browser -y
                 ;;
-            centos|rhel|fedora)
+            centos|rhel|fedora|rocky)
                 sudo tee /etc/yum.repos.d/thorium.repo <<EOF
 [thorium]
 name=Thorium Browser
@@ -544,7 +544,7 @@ function install_google_chrome() {
                 sudo apt-get install -f -y
                 rm google-chrome-stable_current_amd64.deb
                 ;;
-            centos|rhel|fedora)
+            centos|rhel|fedora|rocky)
                 sudo tee /etc/yum.repos.d/google-chrome.repo <<EOF
 [google-chrome]
 name=google-chrome
@@ -631,7 +631,7 @@ function install_brave_browser() {
                 sudo apt install brave-browser -y
                 sudo apt --fix-broken install -y
                 ;;
-            centos|rhel|fedora)
+            centos|rhel|fedora|rocky)
                 sudo dnf install dnf-plugins-core -y
                 sudo dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
                 sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
@@ -735,7 +735,7 @@ function install_flatpak_and_bottles () {
                 sudo apt install gnome-software-plugin-flatpak -y
                 sudo apt install plasma-discover-backend-flatpak -y
                 ;;
-            centos|rhel|fedora)
+            centos|rhel|fedora|rocky)
                 sudo yum install -y flatpak
                 ;;
             arch|manjaro)
@@ -822,7 +822,7 @@ function install_obsidian () {
                 rm "$file_name"
                 sudo apt --fix-broken install -y
                 ;;
-            centos|rhel|fedora)
+            centos|rhel|fedora|rocky)
                 latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".rpm")) | .browser_download_url')
                 wget "$latest_release_url_Obsidian"
                 file_name=$(basename "$latest_release_url_Obsidian")
@@ -881,7 +881,7 @@ function install_virtualbox () {
                 # Install VirtualBox
                 sudo apt install virtualbox-6.1 -y
                 ;;
-            centos|rhel|fedora)
+            centos|rhel|fedora|rocky)
                 # Add the VirtualBox repository to the system's YUM source list
                 sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo rpm --import -
                 sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo rpm --import -
