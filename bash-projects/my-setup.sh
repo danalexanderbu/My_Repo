@@ -50,8 +50,7 @@ function add_repositories() {
             yay -Syu
             ;;
         opensuse-tumbleweed)
-            sudo zypper ar -f https://download.opensuse.org/repositories/home:/Kenzy:/experimental/openSUSE_Tumbleweed/home:Kenzy:experimental.repo
-            sudo zypper ar -f https://download.opensuse.org/repositories/non-oss/repo/non-oss.repo
+            sudo zypper ar obs://devel:tools:ide:vscode devel_tools_ide_vscode
             sudo zypper refresh
             ;;
         *)
@@ -63,11 +62,11 @@ function add_repositories() {
 
 function apt_installs() {
     declare -a packages=(
-        "libpcsclite1" "PC/SC Lite shared library" ON \
-        "pcscd" "Middleware to access a smart card" ON \
-        "libccid" "PC/SC driver for USB CCID smart card readers" ON \
-        "libpcsc-perl" "Perl bindings for PC/SC" ON \
-        "pcsc-tools" "Tools for testing PC/SC drivers and applications" ON \
+        "libpcsclite1" "PC/SC Lite shared library" OFF \
+        "pcscd" "Middleware to access a smart card" OFF \
+        "libccid" "PC/SC driver for USB CCID smart card readers" OFF \
+        "libpcsc-perl" "Perl bindings for PC/SC" OFF \
+        "pcsc-tools" "Tools for testing PC/SC drivers and applications" OFF \
         "libnss3-tools" "Network Security Service tools" ON \
         "ffmpeg" "Multimedia player, server and encoder" OFF \
         "obs-studio" "Open broadcaster software studio" ON \
@@ -81,15 +80,16 @@ function apt_installs() {
         "ethtool" "Utility for controlling network drivers and hardware" ON \
         "net-tools" "Networking tools" ON \
         "open-jdk-17" "JDK17 support" ON \
-        "npm" "npm" ON \
-        "unzip" "unzip" ON \
-        "gnupg" "gnupg" ON \
-        "gcc" "gcc" ON \
-        "make" "make" ON \
+        "npm" "npm package" ON \
+        "unzip" "unzip package" ON \
+        "gnupg" "gnupg package" ON \
+        "gcc" "gcc package" ON \
+        "cmake" "make package" ON \
+        "make" "make package" ON \
         "nmap" "Network exploration tool and security scanner" ON \
         "jq" "Json Query language interpreter" ON \
         "compton" "Compositor for AwesomeWM" OFF \
-        "gnome-themes-extra" "GNOME extra themes" ON \
+        "gnome-themes-extra" "GNOME extra themes" OFF \
         "nitrogen" "Wallpaper manager for AwesomeWM" ON \
         "dmenu" "Better menu for startup in AwesomeWM" OFF\
         "samba" "SMB/CIFS file, print, and login server for Unix" ON \
@@ -110,27 +110,8 @@ function apt_installs() {
         "kwalletmanager" "KDE wallet manager" OFF \
         "plasma-discover" "KDE Discover software store" OFF \
         "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF \
-        "json-glib.i686" "Library for GLib JSON" ON \
-        "libdbusmenu.i686" "Library for dbusmenu" ON \
-        "fontconfig.i686" "Font configuration and customization library" ON \
-        "freetype.i686" "Free and portable font rendering engine" ON \
-        "glib2.i686" "Low-level core library" ON \
-        "gtk2.i686" "GIMP Toolkit for X11" ON \
-        "pango.i686" "Framework for the layout and rendering of i18n text" ON \
-        "glibc.i686" "GNU C Library" ON \
-        "alsa-lib.i686" "ALSA library" ON \
-        "alsa-plugins-pulseaudio.i686" "ALSA plugins for PulseAudio" ON \
-        "libXScrnSaver.i686" "X11 Screen Saver extension library" ON \
-        "libXtst.i686" "X11 Testing -- Resource extension library" ON \
-        "libatomic.i686" "GCC atomic library" ON \
-        "libcurl.i686" "libcurl library" ON \
-        "libdbusmenu-gtk3.i686" "Library for dbusmenu (GTK3)" ON \
-        "libpng12.i686" "PNG library (version 1.2)" ON \
-        "libvdpau.i686" "VDPAU library" ON \
-        "mesa-dri-drivers.i686" "mesa drivers" ON \
-        "mesa-libGL.i686" "mesa librarys" ON \
-        "nss.i686" ON 
-    )
+        "code" "vscode" ON \
+        )
 
     for ((i=0; i<${#packages[@]}; i+=3)); do
         if [ "${packages[i+2]}" == "ON" ]; then
@@ -152,9 +133,14 @@ function apt_installs() {
                     fi
                     ;;
                 opensuse-tumbleweed)
-                    if ! zipper se --installed-only "$pkg" &>/dev/null; then
-                        sudo zipper se "$pkg" --noconfirm || { echo "Failed to install $pkg"; exit 1; }
+                    if ! zypper se --installed-only "$pkg" &>/dev/null; then
+                        if zypper se "$pkg" &>/dev/null; then
+                            sudo zypper -n install "$pkg" || { echo "Failed to install $pkg"; exit 1; }
+                        else
+                            echo "Package $pkg not available in OpenSUSE Tumbleweed repositories. Skipping."
+                        fi
                     fi
+                    sudo zypper -n install steam
                     ;;
                 *)
                     echo "Unsupported distribution: $DISTRO. Exiting."
@@ -167,7 +153,35 @@ function apt_installs() {
 }
 
 function awesomewm() {
-    sudo apt install awesome nitrogen compton dmenu alacritty -y
+    declare -a packages=(
+        "awesome" \
+        "nitrogen" \
+        "compton" \
+        "dmenu" \
+        "alacritty"
+        )
+
+    case $DISTRO in
+        debian|ubuntu)
+            echo "Detected Debian-based distribution: $DISTRO"
+            sudo apt update
+            for pkg in "${packages[@]}"; do
+                sudo apt install -y "$pkg" || { echo "Failed to install $pkg"; exit 1; }
+            done
+            ;;
+        opensuse-tumbleweed|opensuse-leap)
+            echo "Detected OpenSUSE-based distribution: $DISTRO"
+            sudo zypper refresh
+            for pkg in "${packages[@]}"; do
+                sudo zypper install -n "$pkg" || { echo "Failed to install $pkg"; exit 1; }
+            done
+            ;;
+        *)
+            echo "Unsupported distribution: $DISTRO. Exiting."
+            exit 1
+            ;;
+    esac
+
     mkdir -p ~/.config/awesome
     mkdir -p ~/.config/alacritty
     mkdir -p /usr/share/icons
@@ -274,7 +288,7 @@ function remove_packages() {
                 sudo pacman -R "$pkg" --noconfirm || { echo "Failed to remove $pkg"; exit 1; }
                 ;;
             opensuse-tumbleweed)
-                sudo zypper rm "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
+                sudo zypper -n rm "$pkg" || { echo "Failed to remove $pkg"; exit 1; }
                 ;;
             *)
                 echo "Unsupported distribution: $DISTRO. Exiting."
@@ -284,24 +298,70 @@ function remove_packages() {
     done
 }
 
+function install_torguard() {
+    local url="https://updates.torguard.biz/Software/Linux/torguard-latest-amd64-arch.tar.gz"
+    local filename="torguard-latest-amd64-arch.tar.gz"
+    local inner_tarfile="torguard-v4.8.29-build.286.1+g70e4e51-amd64-arch.tar"
+    local inner_dirname="torguard-v4.8.29-build.286.1+g70e4e51-amd64-arch"
+
+    echo "Downloading TorGuard..."
+    curl -L -o "$filename" "$url" || { echo "Failed to download TorGuard"; exit 1; }
+
+    echo "Extracting TorGuard..."
+    tar -xzvf "$filename" -C /tmp/ || { echo "Failed to extract TorGuard"; exit 1; }
+
+    echo "Extracting inner tar file..."
+    tar -xvf /tmp/"$inner_dirname"/"$inner_tarfile" -C /tmp/"$inner_dirname" || { echo "Failed to extract inner tar file"; exit 1; }
+
+    echo "Copying files to system directories..."
+    # might be problem if multiple file in sudoer.d directory
+    sudo cp -r /tmp/"$inner_dirname"/etc/* /etc/ || { echo "Failed to copy files to /etc"; exit 1; }
+    sudo cp -r /tmp/"$inner_dirname"/opt/* /opt/ || { echo "Failed to copy files to /opt"; exit 1; }
+
+    echo "Copying files to /usr, preserving existing directories..."
+    find /tmp/"$inner_dirname"/usr -type f -exec sudo cp --parents {} / \;
+
+    echo "Adding TorGuard executable to /usr/bin..."
+    if [ -f /opt/torguard/bin/torguard ]; then
+        sudo ln -sf /opt/torguard/bin/torguard /usr/bin/torguard || { echo "Failed to create symlink to /usr/bin"; exit 1; }
+    else
+        echo "TorGuard executable not found in /opt/torguard/bin"
+        exit 1
+    fi
+
+    echo "Cleaning up..."
+    rm -f /tmp/"$filename"
+    rm -rf /tmp/"$inner_dirname"
+
+    echo "TorGuard installation completed successfully."
+}
+
+function install_appimages() {
+    local url="https://objects.githubusercontent.com/github-production-release-asset-2e65be/135171961/fec3520f-1837-4866-b28f-866086a7b29c?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20240624%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240624T012338Z&X-Amz-Expires=300&X-Amz-Signature=bbaba23d6f22f08e94c9f8c6d0657f9b11f2b756b566a1f388d89ce2a4146c13&X-Amz-SignedHeaders=host&actor_id=92746444&key_id=0&repo_id=135171961&response-content-disposition=attachment%3B%20filename%3DDesktopEditors-x86_64.AppImage&response-content-type=application%2Foctet-stream"
+    local filename="DesktopEditors-x86_64.AppImage"
+
+    echo "Downloading OnlyOffice AppImage..."
+    curl -L -o "$filename" "$url" || { echo "Failed to download OnlyOffice AppImage"; exit 1; }
+
+    echo "Making the AppImage executable..."
+    chmod +x "$filename" || { echo "Failed to make OnlyOffice AppImage executable"; exit 1; }
+
+    echo "Moving the AppImage to /usr/local/bin..."
+    sudo mv "$filename" /usr/local/bin/ || { echo "Failed to move OnlyOffice AppImage to /usr/local/bin"; exit 1; }
+
+    echo "OnlyOffice AppImage installation completed successfully."
+}
+
 function download_and_install_deb() {
     cd $HOME/Downloads || exit
     declare -a urls=(
         "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
         "https://dl.discordapp.net/apps/linux/0.0.57/discord-0.0.57.tar.gz"
         "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
-        "https://vscode.download.prss.microsoft.com/dbazure/download/stable/5437499feb04f7a586f677b155b039bc2b3669eb/code-1.90.2-1718751675.el8.x86_64.rpm"
         "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
-        "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors.x86_64.rpm"
-        "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
-        "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.rpm"
         "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
-        "https://cdn.zoom.us/prod/6.1.0.198/zoom_x86_64.rpm"
+        "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
         "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
-        "https://negativo17.org/repos/steam/epel-7/x86_64/libdbusmenu-gtk2-16.04.0-4.el7.i686.rpm"
-        "https://download1.rpmfusion.org/free/el/updates/8/x86_64/l/libva-intel-driver-2.1.0-4.el8.x86_64.rpm"
-        "https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm"
-        "https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm"
     )
 
     echo "Please select the package you want to download and install. Enter number (e.g., 1) or 0 to exit:"
@@ -344,7 +404,7 @@ function download_and_install_deb() {
                         ;;
                     opensuse-tumbleweed)
                         if [[ "$file_name" == *.rpm ]]; then
-                            sudo zypper install -y "$file_name"
+                            sudo zypper -n install "$file_name"
                         elif [[ "$file_name" == *.tar.gz ]]; then
                             sudo tar -xzvf "$file_name" -C /opt
                             sudo ln -sf /opt/${file_name%.tar.gz}/${file_name%.tar.gz} /usr/bin/${file_name%.tar.gz}
@@ -380,7 +440,7 @@ function download_and_install_deb() {
             sudo pacman -Syu --noconfirm
             ;;
         opensuse-tumbleweed)
-            sudo zypper refresh
+            sudo zypper -n refresh 
             ;;
     esac
 
@@ -438,7 +498,7 @@ EOF
             sudo zypper ar https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$DISTRO/devel:kubic:libcontainers:stable.repo
             sudo zypper ar https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.21/$DISTRO/devel:kubic:libcontainers:stable:cri-o:1.21.repo
             sudo zypper ref
-            sudo zypper install -y kubelet kubeadm kubectl containerd
+            sudo zypper -n install kubelet kubeadm kubectl containerd
             sudo systemctl enable --now kubelet
             ;;
         *)
@@ -488,7 +548,8 @@ function install_btop() {
         
         tar -xjf "$btop_file_name"
         cd btop
-        sudo ./install.sh
+        sudo make install
+        sudo make setuid
         
         # Check if the installation was successful
         if [ $? -ne 0 ]; then
@@ -623,7 +684,7 @@ EOF
                 sudo zypper ar http://dl.google.com/linux/chrome/rpm/stable/x86_64 Google-Chrome
                 sudo rpm --import https://dl.google.com/linux/linux_signing_key.pub
                 sudo zypper ref
-                sudo zypper install -y google-chrome-stable
+                sudo zypper -n install google-chrome-stable
                 ;;
             *)
                 echo "Unsupported distribution: $DISTRO. Exiting."
@@ -752,11 +813,11 @@ function install_brave_browser() {
                 done
                 ;;
             opensuse-tumbleweed)
-                sudo zypper install -y curl
+                sudo zypper -n install curl
                 sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
                 sudo zypper addrepo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
                 sudo zypper refresh
-                sudo zypper install -y brave-browser
+                sudo zypper -n install brave-browser
                 ;;
             *)
                 echo "Unsupported distribution: $DISTRO. Exiting."
@@ -795,7 +856,7 @@ function install_flatpak_and_bottles () {
                 sudo pacman -Syu --noconfirm
                 ;;
             opensuse-tumbleweed)
-                sudo zypper install -y flatpak
+                sudo zypper -n install flatpak
                 ;;
             *)
                 echo "Unsupported distribution: $DISTRO. Exiting."
@@ -898,7 +959,7 @@ function install_obsidian () {
                 latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".tar.gz") and (contains("arm64") | not)) | .browser_download_url')
                 wget "$latest_release_url_Obsidian"
                 file_name=$(basename "$latest_release_url_Obsidian")
-                sudo zypper install -y "$file_name"
+                sudo zypper -n install "$file_name"
                 rm "$file_name"
                 ;;
             *)
