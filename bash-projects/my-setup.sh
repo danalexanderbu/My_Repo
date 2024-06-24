@@ -49,7 +49,7 @@ function add_repositories() {
             # Adding AUR support, assuming 'yay' is installed
             yay -Syu
             ;;
-        suse|opensuse)
+        opensuse-tumbleweed)
             sudo zypper ar -f https://download.opensuse.org/repositories/home:/Kenzy:/experimental/openSUSE_Tumbleweed/home:Kenzy:experimental.repo
             sudo zypper ar -f https://download.opensuse.org/repositories/non-oss/repo/non-oss.repo
             sudo zypper refresh
@@ -151,7 +151,7 @@ function apt_installs() {
                         sudo pacman -S "$pkg" --noconfirm || { echo "Failed to install $pkg"; exit 1; }
                     fi
                     ;;
-                opensuse)
+                opensuse-tumbleweed)
                     if ! zipper se --installed-only "$pkg" &>/dev/null; then
                         sudo zipper se "$pkg" --noconfirm || { echo "Failed to install $pkg"; exit 1; }
                     fi
@@ -273,7 +273,7 @@ function remove_packages() {
             arch|manjaro)
                 sudo pacman -R "$pkg" --noconfirm || { echo "Failed to remove $pkg"; exit 1; }
                 ;;
-            suse|opensuse)
+            opensuse-tumbleweed)
                 sudo zypper rm "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
                 ;;
             *)
@@ -342,7 +342,7 @@ function download_and_install_deb() {
                             echo "Unsupported file format for $DISTRO"
                         fi
                         ;;
-                    suse|opensuse)
+                    opensuse-tumbleweed)
                         if [[ "$file_name" == *.rpm ]]; then
                             sudo zypper install -y "$file_name"
                         elif [[ "$file_name" == *.tar.gz ]]; then
@@ -379,7 +379,7 @@ function download_and_install_deb() {
         arch|manjaro)
             sudo pacman -Syu --noconfirm
             ;;
-        suse|opensuse)
+        opensuse-tumbleweed)
             sudo zypper refresh
             ;;
     esac
@@ -433,7 +433,7 @@ EOF
             sudo pacman -S --noconfirm kubelet kubeadm kubectl containerd
             sudo systemctl enable --now kubelet
             ;;
-        opensuse|suse)
+        opensuse-tumbleweed)
             # Add Kubernetes repository
             sudo zypper ar https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$DISTRO/devel:kubic:libcontainers:stable.repo
             sudo zypper ar https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.21/$DISTRO/devel:kubic:libcontainers:stable:cri-o:1.21.repo
@@ -563,7 +563,7 @@ EOF
                 cd ..
                 rm -rf thorium-browser-bin
                 ;;
-            suse|opensuse)
+            opensuse-tumbleweed)
                 sudo zypper ar https://dl.thorium.rocks/rpm/stable/x86_64 thorium
                 sudo rpm --import https://dl.thorium.rocks/rpm/stable/x86_64/thorium.asc
                 sudo zypper refresh
@@ -619,7 +619,7 @@ EOF
                 fi
                 yay -S --noconfirm google-chrome
                 ;;
-            suse|opensuse)
+            opensuse-tumbleweed)
                 sudo zypper ar http://dl.google.com/linux/chrome/rpm/stable/x86_64 Google-Chrome
                 sudo rpm --import https://dl.google.com/linux/linux_signing_key.pub
                 sudo zypper ref
@@ -751,7 +751,7 @@ function install_brave_browser() {
                     break
                 done
                 ;;
-            suse|opensuse)
+            opensuse-tumbleweed)
                 sudo zypper install -y curl
                 sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
                 sudo zypper addrepo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
@@ -794,7 +794,7 @@ function install_flatpak_and_bottles () {
             arch|manjaro)
                 sudo pacman -Syu --noconfirm
                 ;;
-            suse|opensuse)
+            opensuse-tumbleweed)
                 sudo zypper install -y flatpak
                 ;;
             *)
@@ -894,7 +894,7 @@ function install_obsidian () {
                 fi
                 yay -S --noconfirm obsidian
                 ;;
-            suse|opensuse)
+            opensuse-tumbleweed)
                 latest_release_url_Obsidian=$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | jq -r '.assets[] | select(.name | endswith(".tar.gz") and (contains("arm64") | not)) | .browser_download_url')
                 wget "$latest_release_url_Obsidian"
                 file_name=$(basename "$latest_release_url_Obsidian")
@@ -952,7 +952,7 @@ function install_virtualbox () {
                 sudo pacman -S --noconfirm virtualbox virtualbox-host-modules-arch
                 sudo modprobe vboxdrv
                 ;;
-            suse|opensuse)
+            opensuse-tumbleweed)
                 # Add the VirtualBox repository to the system's zypper source list
                 sudo zypper addrepo https://download.virtualbox.org/virtualbox/rpm/opensuse/virtualbox.repo
                 sudo zypper refresh
