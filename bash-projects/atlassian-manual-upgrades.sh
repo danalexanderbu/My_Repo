@@ -112,8 +112,8 @@ EOF
         s|</init-param>|</init-param>\
             <!-- session-timeout -->\
             <init-param>\
-              <param-name>autologin.cookie.age</param-name>\
-              <param-value>28800</param-value>\
+                <param-name>autologin.cookie.age</param-name>\
+                <param-value>28800</param-value>\
             </init-param>|
     }
     }' /opt/atlassian/jira/atlassian-jira/WEB-INF/classes/seraph-config.xml
@@ -224,8 +224,8 @@ EOF
         s|</init-param>|</init-param>\
             <!-- session-timeout -->\
             <init-param>\
-              <param-name>autologin.cookie.age</param-name>\
-              <param-value>28800</param-value>\
+                <param-name>autologin.cookie.age</param-name>\
+                <param-value>28800</param-value>\
             </init-param>|
     }
     }' /opt/atlassian/confluence/confluence/WEB-INF/classes/seraph-config.xml
