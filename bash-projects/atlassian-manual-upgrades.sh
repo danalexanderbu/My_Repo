@@ -1,13 +1,13 @@
 #!/bin/bash
 #separate into functions
-function jira-upload {
-    user_home="/home/$(whoami)/Documents"
-    server_xml_backup="$user_home/jira-server.xml"
+function jira-upload () {
+    user_home="/home/$(whoami)"
+    server_xml_backup="$user_home/Documents/jira-server.xml"
     server_xml="/opt/atlassian/jira/conf/server.xml"
     robots="/opt/atlassian/jira/atlassian-jira/robots.txt"
-    robots_backup="$user_home/jira-robots.txt"
+    robots_backup="$user_home/Documents/jira-robots.txt"
     setenv="/opt/atlassian/jira/bin/setenv.sh"
-    backup_dir="$user_home"
+    backup_dir="$user_home/Documents"
     downloads="$user_home/Downloads"  # Define the directory to search in
 
     # Ensure the backup directory exists
@@ -19,7 +19,7 @@ function jira-upload {
     cp $setenv $user_home/jira-setenv.sh
     cp /opt/atlassian/jira/conf/web.xml $backup_dir/jira-web.xml.bak
     cp /opt/atlassian/jira/atlassian-jira/WEB-INF/web.xml $backup_dir/jira-web-inf-web.xml.bak
-    cp /opt/atlassian/jira/atlassian-jira/WEB-INF/classes/seraph-config.xml $backup_dir/jira-seraph-config.xml.bak 
+    cp /opt/atlassian/jira/atlassian-jira/WEB-INF/classes/seraph-config.xml $backup_dir/jira-seraph-config.xml.bak
 
     # Find the files matching the pattern atlassian-jira-software-*.bin in the specified directory
     files=("$downloads"/atlassian-jira-software-*.bin)
@@ -44,7 +44,7 @@ function jira-upload {
     fi
     # Set execute permission
     sudo chmod +x "$file"
-    
+
     # Execute the file
     sudo "$file"
     echo "Installer finished."
@@ -80,11 +80,11 @@ Disallow: /login.jsp
 EOF
 
     # Add plugin upload button
-    sed -i 's|JVM_SUPPORT_RECOMMENDED_ARGS=""|JVM_SUPPORT_RECOMMENDED_ARGS="-Dupm.plugin.upload.enabled=true"|' "$setenv"
+    sudo sed -i 's|JVM_SUPPORT_RECOMMENDED_ARGS=""|JVM_SUPPORT_RECOMMENDED_ARGS="-Dupm.plugin.upload.enabled=true"|' "$setenv"
     echo "added plugin upload to setenv.sh"
 
     # 1 hour idle timeout for /opt/atlassian/jira/conf/web.xml
-    sed -i '/<session-config>/,/<\/session-config>/c\
+    sudo sed -i '/<session-config>/,/<\/session-config>/c\
         <session-config>\
             <session-timeout>60</session-timeout>\
             <tracking-mode>COOKIE</tracking-mode>\
@@ -95,7 +95,7 @@ EOF
     echo "modified /opt/atlassian/jira/conf/web.xml"
 
     # 1 hour timeout for /opt/atlassian/jira/atlassian-jira/WEB-INF/web.xml
-    sed -i '/<session-config>/,/<\/session-config>/c\
+    sudo sed -i '/<session-config>/,/<\/session-config>/c\
         <session-config>\
             <session-timeout>60</session-timeout>\
             <tracking-mode>COOKIE</tracking-mode>\
@@ -106,7 +106,7 @@ EOF
     echo "modified /opt/atlassian/jira/atlassian-jira/WEB-INF/web.xml"
 
     # 8 hour force logout
-    sed -i '/<init-param>/,/<\/init-param>/ {
+    sudo sed -i '/<init-param>/,/<\/init-param>/ {
       /<param-name>invalidate.session.exclude.list<\/param-name>/ {
         N; N; N;
         s|</init-param>|</init-param>\
@@ -124,7 +124,7 @@ EOF
     echo "fixed permissions"
 }
 
-function confluence-upload {
+function confluence-upload () {
     user_home="/home/$(whoami)/Documents"
     server_xml_backup="$user_home/confluence-server.xml"
     server_xml="/opt/atlassian/confluence/conf/server.xml"
@@ -143,7 +143,7 @@ function confluence-upload {
     cp $setenv $user_home/confluence-setenv.sh
     cp /opt/atlassian/confluence/conf/web.xml $backup_dir/conf-web.xml.bak
     cp /opt/atlassian/confluence/confluence/WEB-INF/web.xml $backup_dir/con-web-inf-web.xml.bak
-    cp /opt/atlassian/confluence/confluence/WEB-INF/classes/seraph-config.xml $backup_dir/con-seraph-config.xml.bak 
+    cp /opt/atlassian/confluence/confluence/WEB-INF/classes/seraph-config.xml $backup_dir/con-seraph-config.xml.bak
 
     # Find the files matching the pattern atlassian-confluence-*.bin in the specified directory
     files=("$downloads"/atlassian-confluence-*.bin)
@@ -168,7 +168,7 @@ function confluence-upload {
     fi
     # Set execute permission
     sudo chmod +x "$file"
-    
+
     # Execute the file
     sudo "$file"
     echo "Installer finished."
@@ -192,7 +192,7 @@ Disallow: /
 EOF
 
     # Add plugin upload button
-    sed -i '/CATALINA_OPTS="-Datlassian.plugins.enable.wait-300 ${CATALINA_OPTS}"/a CATALINA_OPTS="-Dupm.plugin.upload.enabled=true ${CATALINA_OPTS}"' "$setenv"
+    sudo sed -i '/CATALINA_OPTS="-Datlassian.plugins.enable.wait-300 ${CATALINA_OPTS}"/a CATALINA_OPTS="-Dupm.plugin.upload.enabled=true ${CATALINA_OPTS}"' "$setenv"
     echo "added plugin upload to setenv.sh"
 
     # 1 hour idle timeout for /opt/atlassian/confluence/conf/web.xml
@@ -207,7 +207,7 @@ EOF
     echo "modified /opt/atlassian/confluence/conf/web.xml"
 
     # 1 hour timeout for /opt/atlassian/confluence/confluencec/WEB-INF/web.xml
-    sed -i '/<session-config>/,/<\/session-config>/c\
+    sudo sed -i '/<session-config>/,/<\/session-config>/c\
         <session-config>\
             <session-timeout>60</session-timeout>\
             <tracking-mode>COOKIE</tracking-mode>\
@@ -218,7 +218,7 @@ EOF
     echo "modified /opt/atlassian/confluence/confluence/WEB-INF/web.xml"
 
     # 8 hour force logout
-    sed -i '/<init-param>/,/<\/init-param>/ {
+    sudo sed -i '/<init-param>/,/<\/init-param>/ {
       /<param-name>invalidate.session.exclude.list<\/param-name>/ {
         N; N; N;
         s|</init-param>|</init-param>\
@@ -233,29 +233,31 @@ EOF
 
     # Fix directory permissions
     sudo chown confluence:confluence -R /opt/atlassian/confluence
-    echo "fixed permissions"    
+    echo "fixed permissions"
 }
 
-function bitbucket-upload {
+function bitbucket-upload () {
     # need to remove oldest bitbucket version
     ls -d /opt/atlassian/bitbucket/*
-    read -p "which directory version do you want to delete: " DIR_VERSION
-    sudo rm -r /opt/atlassian/bitbucket/$DIR_VERSION
+    #read -p "which directory version do you want to delete: " DIR_VERSION
+    #sudo rm -r /opt/atlassian/bitbucket/$DIR_VERSION
 
     read -p "what is the current Bitbucket version: " BITBUCKET_VERSION
 
-    user_home="/home/$(whoami)/Documents"
+    user_home="/home/$(whoami)"
     robots="/opt/atlassian/bitbucket/$BITBUCKET_VERSION/app/robots.txt"
+    robots_backup="$backup_dir/bit_robots.txt"
     setenv="/opt/atlassian/bitbucket/$BITBUCKET_VERSION/bin/_start-webapp.sh"
-    setenv_backup="$user_home/bit_start-webapp.sh"
+    setenv_backup="$user_home/Documents/bit_start-webapp.sh"
     app_home="/var/atlassian/application-data/bitbucket/shared/bitbucket.properties"
-    backup_dir="$user_home"
+    backup_dir="$user_home/Documents"
     downloads="$user_home/Downloads"
 
     # Ensure the backup directory exists
     mkdir -p $backup_dir
-    cp $app_home $user_home
+    sudo cp $app_home $user_home
     cp $setenv $setenv_backup
+    cp $robots $backup_dir
     # Find the files matching the pattern atlassian-bitbucket-*.bin in the specified directory
     files=("$downloads"/atlassian-bitbucket-*.bin)
 
@@ -279,35 +281,25 @@ function bitbucket-upload {
     fi
     # Set execute permission
     sudo chmod +x "$file"
-    
+
     # Execute the file
     sudo "$file"
     echo "Installer finished."
 
-    
+
     # Update robots.txt
-    cd $user_home
-    cat << EOF > "$robots"
-# robots.txt for Bitbucket
-# You may specify URLs in this file that will not be crawled by search engines (Google, MSN, etc)
-#
-# By default, all SearchRequestViews in the IssueNavigator (e.g.: Word, XML, RSS, etc) and all IssueViews
-# (XML, Printable and Word) are excluded by the /sr/ and /si/ directives below.
-
-User-agent: *
-Disallow: /
-EOF
-
+    cd $backup_dir
+    sudo cp $robots_backup $robots
     # Add plugin upload button
-    sed -i 's|JVM_SUPPORT_RECOMMENDED_ARGS=""|JVM_SUPPORT_RECOMMENDED_ARGS="-Dupm.plugin.upload.enabled=true"|' "$setenv"
+    sudo sed -i 's|JVM_SUPPORT_RECOMMENDED_ARGS=""|JVM_SUPPORT_RECOMMENDED_ARGS="-Dupm.plugin.upload.enabled=true"|' "$setenv"
     echo "added plugin upload to setenv.sh"
 
     # Fix directory permissions
     sudo chown bitbucket:bitbucket -R /opt/atlassian/bitbucket
-    echo "fixed permissions"   
+    echo "fixed permissions"
 }
 
-function bamboo-upload {
+function bamboo-upload () {
     CURRENT_BAMBOO_DIR="/opt/atlassian/bamboo"
     DOWNLOAD_DIR="/home/dburke/Downloads"
     TARGET_DIR="/opt/atlassian"
@@ -336,7 +328,7 @@ function bamboo-upload {
     else
         new_bamboo_file=${new_bamboo_files[0]}
         echo "Found file: $new_bamboo_file"
-        
+
         # Get the current version
         current_version=$(get_current_version)
         if [ "$current_version" != "unknown" ]; then
@@ -344,21 +336,21 @@ function bamboo-upload {
         else
             renamed_bamboo_dir="$CURRENT_BAMBOO_DIR-backup"
         fi
-        
+
         # Rename the current Bamboo directory
         if [ -d "$CURRENT_BAMBOO_DIR" ]; then
             mv "$CURRENT_BAMBOO_DIR" "$renamed_bamboo_dir"
             echo "Renamed current Bamboo directory to $renamed_bamboo_dir"
         fi
-        
+
         # Extract the new Bamboo tar.gz file to the target directory
         tar -xzvf "$new_bamboo_file" -C "$TARGET_DIR"
-        
+
         # Rename the extracted directory to the standard Bamboo directory name
         extracted_dir=$(basename "$new_bamboo_file" .tar.gz)
         mv "$TARGET_DIR/$extracted_dir" "$CURRENT_BAMBOO_DIR"
         echo "Renamed $TARGET_DIR/$extracted_dir to $CURRENT_BAMBOO_DIR"
-        
+
         # Remove the new Bamboo tar.gz file after extraction
         rm -f "$new_bamboo_file"
         echo "Removed the tar.gz file: $new_bamboo_file"
@@ -373,12 +365,12 @@ while true; do
     echo "4 - Bamboo"
     echo "5 - Cancel"
     read -p "Enter your choice: " choice
-    
+
     case $choice in
-        1) function jira-upload;;
-        2) function confluence-upload;;
-        3) function bitbucket-upload;;
-        4) function Bamboo-upload;;
+        1) jira-upload;;
+        2) confluence-upload;;
+        3) bitbucket-upload;;
+        4) bamboo-upload;;
         5) echo "Cancel."; break;;
         *) echo "Invalid option: $choice";;
     esac
@@ -389,4 +381,3 @@ while true; do
         break
     fi
 done
-
