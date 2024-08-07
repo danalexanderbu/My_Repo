@@ -32,43 +32,34 @@ Vagrant.configure("2") do |config|
     sudo mkdir -p /tmp/jira /tmp/confluence /tmp/bitbucket
 
     cat <<EOF > $RESPONSE_FILE1
+#backupJira$Boolean=true
 app.install.service$Boolean=true
-app.service.port=8080
-existingInstallationDir=/opt/atlassian/jira
+#existingInstallationDir=/opt/atlassian/jira
 sys.adminRights$Boolean=true
 sys.confirmedUpdateInstallationString=false
 sys.languageId=en
 sys.installationDir=/opt/atlassian/jira
-sys.proxyHost=
-sys.proxy.port=
-sys.confirmedUpdateInstallationString=false
 executeLauncherAction$Boolean=false
 EOF
 
     cat <<EOF > $RESPONSE_FILE2
+#backupConfluence$Boolean=true
 app.install.service$Boolean=true
-app.service.port=8090
-existingInstallationDir=/opt/atlassian/confluence
+#existingInstallationDir=/opt/atlassian/confluence
 sys.adminRights$Boolean=true
-sys.confirmedUpdateInstallationString=false
 sys.languageId=en
 sys.installationDir=/opt/atlassian/confluence
-sys.proxyHost=
-sys.proxy.port=
 sys.confirmedUpdateInstallationString=false
 executeLauncherAction$Boolean=false
 EOF
 
     cat <<EOF > $RESPONSE_FILE3
+#backupBitbucket$Boolean=true
 app.install.service$Boolean=true
-app.service.port=7990
-existingInstallationDir=/opt/atlassian/bitbucket
+#existingInstallationDir=/opt/atlassian/bitbucket
 sys.adminRights$Boolean=true
-sys.confirmedUpdateInstallationString=false
 sys.languageId=en
 sys.installationDir=/opt/atlassian/bitbucket
-sys.proxyHost=
-sys.proxy.port=
 sys.confirmedUpdateInstallationString=false
 executeLauncherAction$Boolean=false
 EOF
@@ -110,17 +101,15 @@ EOF
     DB_USER3="bitbucket"
     DB_PASS3="bitbucket"
 
-    sudo -i -u postgres <<EOF
-psql -c "CREATE DATABASE $DB_NAME1;"
-psql -c "CREATE USER $DB_USER1 WITH ENCRYPTED PASSWORD '$DB_PASS1';"
-psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME1 TO $DB_USER1;"
-psql -c "CREATE DATABASE $DB_NAME2;"
-psql -c "CREATE USER $DB_USER2 WITH ENCRYPTED PASSWORD '$DB_PASS2';"
-psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME2 TO $DB_USER2;"
-psql -c "CREATE DATABASE $DB_NAME3;"
-psql -c "CREATE USER $DB_USER3 WITH ENCRYPTED PASSWORD '$DB_PASS3';"
-psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME3 TO $DB_USER3;"
-EOF
+    sudo -i -u postgres psql -c "CREATE DATABASE $DB_NAME1;"
+    sudo -i -u postgres psql -c "CREATE USER $DB_USER1 WITH ENCRYPTED PASSWORD '$DB_PASS1';"
+    sudo -i -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME1 TO $DB_USER1;"
+    sudo -i -u postgres psql -c "CREATE DATABASE $DB_NAME2;"
+    sudo -i -u postgres psql -c "CREATE USER $DB_USER2 WITH ENCRYPTED PASSWORD '$DB_PASS2';"
+    sudo -i -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME2 TO $DB_USER2;"
+    sudo -i -u postgres psql -c "CREATE DATABASE $DB_NAME3;"
+    sudo -i -u postgres psql -c "CREATE USER $DB_USER3 WITH ENCRYPTED PASSWORD '$DB_PASS3';"
+    sudo -i -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME3 TO $DB_USER3;"
   SHELL
     vm1.vm.network "public_network", bridge: "enp6s0", use_dhcp_assigned_default_route: true
     vm1.vm.provision "file", source: PUBLIC_SETUP_PATH, destination: "/tmp/setup.sh"
@@ -156,11 +145,9 @@ EOF
     DB_USER1="jira"
     DB_PASS1="jira"
 
-    sudo -i -u postgres <<EOF
-psql -c "CREATE DATABASE $DB_NAME1;"
-psql -c "CREATE USER $DB_USER1 WITH ENCRYPTED PASSWORD '$DB_PASS1';"
-psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME1 TO $DB_USER1;"
-EOF
+    sudo -i -u postgres psql -c "CREATE DATABASE $DB_NAME1;"
+    sudo -i -u postgres psql -c "CREATE USER $DB_USER1 WITH ENCRYPTED PASSWORD '$DB_PASS1';"
+    sudo -i -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME1 TO $DB_USER1;"
   SHELL
     vm2.vm.network "public_network", bridge: "enp6s0", use_dhcp_assigned_default_route: true
     vm2.vm.provision "file", source: PUBLIC_SETUP_PATH, destination: "/tmp/setup.sh"
