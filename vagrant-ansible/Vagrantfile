@@ -1,0 +1,35 @@
+Vagrant.configure("2") do |config|
+  # Define the base VM configuration
+  config.vm.box = "generic/rocky9"
+
+  # Define common VM settings
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.cpus = 2
+    vb.memory = 4096
+  end
+
+  # want to put my created key in vm's
+  PUBLIC_KEY_PATH = File.expand_path("~/.ssh/my_vagrant_key.pub")
+
+  provision_script = <<-SHELL
+    useradd -m vagrant || true
+    echo "vagrant:vagrant" | chpasswd
+    echo "vagrant ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/vagrant
+    mkdir -p /home/vagrant/.ssh
+    chmod 0700 /home/vagrant/.ssh
+    cp /tmp/my_vagrant_key.pub /home/vagrant/.ssh/authorized_keys
+    chmod 0600 /home/vagrant/.ssh/authorized_keys
+    chown -R vagrant:vagrant /home/vagrant/.ssh
+  SHELL
+
+  vm_names = ["server1", "server2", "agent1", "agent2", "agent3"]
+  vm_names.each do |vm_name|
+    config.vm.define vm_name do |vm|
+      vm.vm.hostname = vm_name
+      vm.vm.network "public_network", bridge: "enp6s1", use_dhcp_assigned_default_route: true
+      vm.vm.provision "file", source: PUBLIC_KEY_PATH, destination: "/tmp/my_vagrant_key.pub"
+      vm.vm.provision "shell", inline: provision_script % { hostname: vm_name }
+    end
+  end
+end

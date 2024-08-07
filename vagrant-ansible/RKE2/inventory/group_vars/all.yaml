@@ -1,0 +1,17 @@
+os: "linux"
+arch: "amd64"
+
+kube_vip_version: "0.8.1"
+vip_interface: "eth1"
+vip: "192.168.1.150"
+
+metallb_version: "0.14.5"
+lb_range: 192.168.1.155-192.168.1.200
+lb_pool_name : first-pool
+
+rke2_version: "v1.30.2-rc7+rke2r1"
+rke2_install_dir: "/usr/local/bin"
+rke2_binary_url: "https://github.com/rancher/rke2/releases/download/{{ rke2_version }}/rke2.linux-amd64"
+
+ansible_user : "vagrant"
+ansible_become: true

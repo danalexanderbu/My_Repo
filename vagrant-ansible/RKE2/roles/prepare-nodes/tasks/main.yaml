@@ -1,0 +1,26 @@
+- name: Ensure essential packages are installed
+  become: true
+  ansible.builtin.package:
+    name:
+      - curl
+      - wget
+      - tar
+    state: present
+
+- name: Enable IPv4 forwarding
+  become: true
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: true
+  tags: sysctl
+
+- name: Enable IPv6 forwarding
+  become: true
+  ansible.posix.sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: "1"
+    state: present
+    reload: true
+  tags: sysctl
