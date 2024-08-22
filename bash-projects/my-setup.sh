@@ -336,27 +336,10 @@ function install_torguard() {
     echo "TorGuard installation completed successfully."
 }
 
-function install_appimages() {
-    local url="https://objects.githubusercontent.com/github-production-release-asset-2e65be/135171961/fec3520f-1837-4866-b28f-866086a7b29c?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20240624%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240624T012338Z&X-Amz-Expires=300&X-Amz-Signature=bbaba23d6f22f08e94c9f8c6d0657f9b11f2b756b566a1f388d89ce2a4146c13&X-Amz-SignedHeaders=host&actor_id=92746444&key_id=0&repo_id=135171961&response-content-disposition=attachment%3B%20filename%3DDesktopEditors-x86_64.AppImage&response-content-type=application%2Foctet-stream"
-    local filename="DesktopEditors-x86_64.AppImage"
-
-    echo "Downloading OnlyOffice AppImage..."
-    curl -L -o "$filename" "$url" || { echo "Failed to download OnlyOffice AppImage"; exit 1; }
-
-    echo "Making the AppImage executable..."
-    chmod +x "$filename" || { echo "Failed to make OnlyOffice AppImage executable"; exit 1; }
-
-    echo "Moving the AppImage to /usr/local/bin..."
-    sudo mv "$filename" /usr/local/bin/ || { echo "Failed to move OnlyOffice AppImage to /usr/local/bin"; exit 1; }
-
-    echo "OnlyOffice AppImage installation completed successfully."
-}
-
 function download_and_install_deb() {
     cd $HOME/Downloads || exit
     declare -a urls=(
         "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
-        "https://dl.discordapp.net/apps/linux/0.0.57/discord-0.0.57.tar.gz"
         "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
         "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
         "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
