@@ -29,8 +29,8 @@ function blacklist_nouveau() {
 function add_repositories() {
      # Display a notice about the action being taken
     echo "Adding repositories"
-    
-  case $DISTRO in
+        
+    case $DISTRO in
         ubuntu|debian)
             sudo add-apt-repository non-free -y
             sudo add-apt-repository contrib non-free -y
@@ -69,9 +69,9 @@ function apt_installs() {
         "pcsc-tools" "Tools for testing PC/SC drivers and applications" OFF \
         "libnss3-tools" "Network Security Service tools" ON \
         "ffmpeg" "Multimedia player, server and encoder" OFF \
-        "obs-studio" "Open broadcaster software studio" ON \
+        "obs-studio" "Open broadcaster software studio" OFF \
         "openssl" "Secure Sockets Layer toolkit" ON \
-        "qbittorrent" "Free and reliable P2P BitTorrent client" ON \
+        "qbittorrent" "Free and reliable P2P BitTorrent client" OFF \
         "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" ON \
         "python3" "Python 3 interpreter" ON \
         "googler" "Google from the terminal" ON \
@@ -79,8 +79,7 @@ function apt_installs() {
         "vim" "Vi IMproved - enhanced vi editor" ON \
         "ethtool" "Utility for controlling network drivers and hardware" ON \
         "net-tools" "Networking tools" ON \
-        "open-jdk-17" "JDK17 support" ON \
-        "npm" "npm package" ON \
+        "openjdk-17-jdk" "JDK17 support" ON \
         "unzip" "unzip package" ON \
         "gnupg" "gnupg package" ON \
         "gcc" "gcc package" ON \
@@ -90,7 +89,7 @@ function apt_installs() {
         "jq" "Json Query language interpreter" ON \
         "compton" "Compositor for AwesomeWM" OFF \
         "gnome-themes-extra" "GNOME extra themes" OFF \
-        "nitrogen" "Wallpaper manager for AwesomeWM" ON \
+        "nitrogen" "Wallpaper manager for AwesomeWM" OFF \
         "dmenu" "Better menu for startup in AwesomeWM" OFF\
         "samba" "SMB/CIFS file, print, and login server for Unix" ON \
         "gnome-keyring" "GNOME keyring services" ON \
@@ -106,7 +105,6 @@ function apt_installs() {
         "curl" "Command line tool for transferring data with URL syntax" ON \
         "lsb-release" "Linux Standard Base version reporting utility" ON \
         "unattended-upgrades" "Automatic installation of security upgrades" ON \
-        "mlocate" "Faster locate using database" ON \
         "kwalletmanager" "KDE wallet manager" OFF \
         "plasma-discover" "KDE Discover software store" OFF \
         "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF \
