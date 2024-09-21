@@ -200,7 +200,7 @@ local calendar_widget = require("awesome-wm-widgets.calendar-widget.calendar")
 mytextclock = wibox.widget.textclock()
 local cw = calendar_widget({
     theme = 'outrun',
-    placement = 'top_right',
+    placement = 'bottom_right',
     start_sunday = true,
     radius = 8,
 -- with customized next/previous (see table above)
@@ -224,7 +224,7 @@ awful.screen.connect_for_each_screen(function(s)
     set_wallpaper(s)
 
     -- Each screen has its own tag table.
-    awful.tag({ "www", "dev", "virtual", "chat", "test", "games", "files", "videos", "downloads" }, s, awful.layout.layouts[1])
+    awful.tag({ "WWW", "VIRTUAL", "SCHOOL", "DOWNLOADS", "GAMES", "FILES", "WORK", "WORKVIRTUAL", "DEV" }, s, awful.layout.layouts[1])
 
     -- Create a promptbox for each screen
     s.mypromptbox = awful.widget.prompt()
@@ -250,7 +250,7 @@ awful.screen.connect_for_each_screen(function(s)
     }
 
     -- Create the wibox
-    s.mywibox = awful.wibar({ position = "top", screen = s, font = 14, height = 30 })
+    s.mywibox = awful.wibar({ position = "bottom", screen = s, font = 18, height = 40 })
 
     -- Add widgets to the wibox
     s.mywibox:setup {
@@ -292,7 +292,7 @@ awful.screen.connect_for_each_screen(function(s)
 		    onlogout = function() awesome.quit() end,
 		    onreboot = function() awful.spawn.with_shell("systemctl reboot") end,
 		    onsuspend = function() awful.spawn.with_shell("systemctl suspend") end,
-		    onpoweroff = function() awful.spawn.with_shell("systemctl shutdown now") end,
+		    onpoweroff = function() awful.spawn.with_shell("systemctl poweroff") end,
 	    }
         }
     }
@@ -354,7 +354,7 @@ globalkeys = gears.table.join(
         {description = "go back", group = "client"}),
 
     -- Standard program
-    awful.key({ modkey,           }, "Return", function () awful.spawn("alacritty") end,
+    awful.key({ modkey,           }, "Return", function () awful.spawn("kitty") end,
               {description = "open a terminal", group = "launcher"}),
     awful.key({ modkey, "Control" }, "r", awesome.restart,
               {description = "reload awesome", group = "awesome"}),
@@ -391,7 +391,7 @@ globalkeys = gears.table.join(
               {description = "restore minimized", group = "client"}),
 
     -- Dmenu
-    awful.key({ modkey },            "space",     function () awful.spawn("dmenu_run -l 5") end,
+    awful.key({ modkey },            "space",     function () awful.spawn("dmenu_run -l 5 -m 0 -i -b") end,
               {description = "run dmenu", group = "launcher"}),
     -- Brave
     awful.key({ modkey },             "b",	  function() awful.spawn("brave-browser") end,
@@ -442,7 +442,7 @@ clientkeys = gears.table.join(
         function (c)
             -- The client currently has the input focus, so it cannot be
             -- minimized, since minimized clients can't have the focus.
-            c.minimized = true
+            c.minimized = false
         end ,
         {description = "minimize", group = "client"}),
     awful.key({ modkey,           }, "m",
@@ -657,7 +657,6 @@ end)
 -- Gaps
 beautiful.useless_gap = 5
 -- Autostart Applications
-awful.spawn.with_shell("compton --config $HOME/.config/compton.conf --daemon")
---redundant
---awful.spawn.with_shell("nitrogen --restore")
+--awful.spawn.with_shell("compton --config $HOME/.config/compton.conf --daemon")
+--awful.spawn.with_shell("/usr/bin/nitrogen --restore")
 awful.spawn.with_shell("~/.config/display.sh")

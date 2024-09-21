@@ -41,6 +41,7 @@ function add_repositories() {
             sudo yum-config-manager --add-repo https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm
             sudo yum-config-manager --add-repo https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm
             sudo yum install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-9.noarch.rpm
+            sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
             sudo yum install epel-release -y
             sudo yum update
             ;;
@@ -338,10 +339,12 @@ function download_and_install_deb() {
     cd $HOME/Downloads || exit
     declare -a urls=(
         "https://dl.discordapp.net/apps/linux/0.0.25/discord-0.0.25.deb"
+        "https://stable.dl2.discordapp.net/apps/linux/0.0.68/discord-0.0.68.tar.gz"
         "https://az764295.vo.msecnd.net/stable/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/code_1.77.3-1681292746_amd64.deb"
+        "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors.x86_64.rpm"
         "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb"
-        "https://cdn.zoom.us/prod/5.15.12.7665/zoom_amd64.deb"
         "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.deb"
+        "https://updates.torguard.biz/Software/Linux/torguard-latest-amd64.rpm"
         "http://repo.steampowered.com/steam/archive/precise/steam_latest.deb"
     )
 
@@ -833,6 +836,10 @@ function install_flatpak_and_bottles () {
                 ;;
             centos|rhel|fedora|rocky)
                 sudo yum install -y flatpak
+                flatpak remote-add flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+                flatpak install com.valvesoftware.Steam -y
+                # run steam in the background and continue with the script
+                flatpak run com.valvesoftware.Steam &
                 ;;
             arch|manjaro)
                 sudo pacman -Syu --noconfirm
@@ -980,7 +987,6 @@ function install_virtualbox () {
                 ;;
             centos|rhel|fedora|rocky)
                 # Add the VirtualBox repository to the system's YUM source list
-                sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo rpm --import -
                 sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo rpm --import -
                 sudo yum-config-manager --add-repo=http://download.virtualbox.org/virtualbox/rpm/el/virtualbox.repo
                 sudo yum update -y
@@ -1275,8 +1281,21 @@ function configure_bashrc () {
     export LESS_TERMCAP_ue=$'\E[0m'
     export LESS_TERMCAP_us=$'\E[01;32m'
 
-    #My custom aliases
-    alias uu="sudo apt update && sudo apt upgrade"
+    # My custom aliases by os
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # For Debian-based systems like Ubuntu
+        if grep -qi "debian\|ubuntu" /etc/os-release; then
+            alias uu='sudo apt update && sudo apt upgrade -y'
+        # For Red Hat-based systems like Fedora or CentOS
+        elif grep -qi "fedora\|centos\|rhel" /etc/os-release; then
+            alias uu='sudo dnf update -y'
+        # For Arch Linux-based systems
+        elif grep -qi "arch" /etc/os-release; then
+            alias uu='sudo pacman -Syu'
+        fi
+    else
+        echo "OS not supported for automatic updates."
+    fi
 
     #Kubernetes alias
     alias k="kubectl"
@@ -1501,6 +1520,7 @@ function custom_fstab () {
     192.168.1.133:/mnt/user/TV	/mnt/TV		nfs	defaults	0	0
     192.168.1.133:/mnt/user/Downloads	/mnt/Downloads	nfs	defaults	0	0
     192.168.1.133:/mnt/user/Disney\040Movies	/mnt/Disney\040Movies	nfs	defaults 0	0
+    192.168.1.133:/mnt/user/domains    /mnt/domains	nfs	defaults 0	0
 EOF
 }
 
