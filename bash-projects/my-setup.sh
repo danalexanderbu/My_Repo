@@ -1038,7 +1038,7 @@ function install_python_packages () {
     read -r response
     if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         packages=(
-            aiohttp
+            aiohttpls
             aiosignal
             alpha-vantage
             api
