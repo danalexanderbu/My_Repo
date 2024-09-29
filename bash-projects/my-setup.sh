@@ -37,9 +37,10 @@ function add_repositories() {
             sudo apt update
             ;;
         centos|rhel|fedora|rocky)
-            sudo yum-config-manager --enable extras
+            sudo yum install yum-utils
             sudo yum-config-manager --add-repo https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm
             sudo yum-config-manager --add-repo https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm
+            sudo yum-config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
             sudo yum install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-9.noarch.rpm
             sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
             sudo yum install epel-release -y
@@ -62,15 +63,14 @@ function add_repositories() {
 }
 
 function apt_installs() {
-    declare -a packages=(
-        "libpcsclite1" "PC/SC Lite shared library" OFF \
-        "pcscd" "Middleware to access a smart card" OFF \
-        "libccid" "PC/SC driver for USB CCID smart card readers" OFF \
-        "libpcsc-perl" "Perl bindings for PC/SC" OFF \
-        "pcsc-tools" "Tools for testing PC/SC drivers and applications" OFF \
+    declare -a debian_packages=(
+        "libpcsclite1" "PC/SC Lite shared library" ON \
+        "pcscd" "Middleware to access a smart card" ON \
+        "libccid" "PC/SC driver for USB CCID smart card readers" ON \
+        "libpcsc-perl" "Perl bindings for PC/SC" ON \
+        "pcsc-tools" "Tools for testing PC/SC drivers and applications" ON \
         "libnss3-tools" "Network Security Service tools" ON \
-        "ffmpeg" "Multimedia player, server and encoder" OFF \
-        "obs-studio" "Open broadcaster software studio" OFF \
+        "obs-studio" "Open broadcaster software studio" ON \
         "openssl" "Secure Sockets Layer toolkit" ON \
         "qbittorrent" "Free and reliable P2P BitTorrent client" OFF \
         "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" ON \
@@ -90,15 +90,13 @@ function apt_installs() {
         "jq" "Json Query language interpreter" ON \
         "compton" "Compositor for AwesomeWM" OFF \
         "gnome-themes-extra" "GNOME extra themes" OFF \
-        "nitrogen" "Wallpaper manager for AwesomeWM" OFF \
-        "dmenu" "Better menu for startup in AwesomeWM" OFF\
+        "nitrogen" "Wallpaper manager for AwesomeWM" ON \
+        "dmenu" "Better menu for startup in AwesomeWM" ON \
         "samba" "SMB/CIFS file, print, and login server for Unix" ON \
         "gnome-keyring" "GNOME keyring services" ON \
         "apt-transport-https" "APT transport for downloading via the HTTPS protocol" ON \
         "docker.io" "Container platform tool" ON \
         "gnupg2" "GNU privacy guard - modern version" ON \
-        "ebtables" "Ethernet bridge frame table administration" ON \
-        "aria2" "High speed download utility" ON \
         "ca-certificates" "Common CA certificates" ON \
         "timeshift" "System restore tool for Linux" ON \
         "nfs-common" "NFS support files common to client and server" ON \
@@ -109,50 +107,52 @@ function apt_installs() {
         "kwalletmanager" "KDE wallet manager" OFF \
         "plasma-discover" "KDE Discover software store" OFF \
         "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF \
-        "code" "vscode" ON \
         )
 
-    for ((i=0; i<${#packages[@]}; i+=3)); do
-        if [ "${packages[i+2]}" == "ON" ]; then
-            pkg=${packages[i]}
-            case $DISTRO in
-                ubuntu|debian)
-                    if ! dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
-                        sudo apt install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
-                    fi
-                    ;;
-                centos|fedora|rhel|rocky)
-                    if ! rpm -q "$pkg" &>/dev/null; then
-                        sudo yum install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
-                    fi
-                    ;;
-                arch|manjaro)
-                    if ! pacman -Q "$pkg" &>/dev/null; then
-                        sudo pacman -S "$pkg" --noconfirm || { echo "Failed to install $pkg"; exit 1; }
-                    fi
-                    ;;
-                opensuse-tumbleweed)
-                    if ! zypper se --installed-only "$pkg" &>/dev/null; then
-                        if zypper se "$pkg" &>/dev/null; then
-                            sudo zypper -n install "$pkg" || { echo "Failed to install $pkg"; exit 1; }
-                        else
-                            echo "Package $pkg not available in OpenSUSE Tumbleweed repositories. Skipping."
-                        fi
-                    fi
-                    sudo zypper -n install steam
-                    ;;
-                *)
-                    echo "Unsupported distribution: $DISTRO. Exiting."
-                    exit 1
-                    ;;
-            esac
-        fi
+    declare -a rhel_packages=(
+        "code" "vscode install" ON \
+        "neofetch" "System information tool" ON \
+        "curl" "Command line tool for transferring data with URL syntax" ON \
+        "jq" "Json Query language interpreter" ON \
+        "ca-certificates" "Common CA certificates" ON \
+        "gnupg2" "GNU privacy guard - modern version" ON \
+        "openssl" "Secure Sockets Layer toolkit" ON \
+        "dmenu" "Better menu for startup in AwesomeWM" ON \
+        "gnome-keyring" "GNOME keyring services" ON \
+        "gnome-libsecret" "GNOME password and secret service" ON \
+        "docker-ce" "Container platform tool" ON \
+        "docker-ce-cli" "Docker CLI" ON \
+        "containerd.io" "Containerd" ON \
+        "docker-buildx-plugin" "Docker buildx plugin" ON \
+        "docker-compose-plugin" "Docker compose plugin" ON \
+        "java-17-openjdk" "JDK17 support" ON \
+        "unzip" "unzip package" ON \
+        "qbittorrent" "Free and reliable P2P BitTorrent client" OFF \
+    )
+
+    case $DISTRO in
+        ubuntu|debian)
+            for pkg in "${debian_packages[@]}"; do
+                if ! dpkg-query -Wf'${db:Status-abbrev}' "$pkg" 2>/dev/null | grep -q '^i'; then
+                    sudo apt install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
+                fi
+            done
+            ;;
+        centos|fedora|rhel|rocky)
+            for pkg in "${rhel_packages[@]}"; do
+                if ! rpm -q "$pkg" &>/dev/null; then
+                    sudo yum install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
+                fi
+                sudo systemctl enable --now docker
+            done
+            ;;
+        *)fi
     done
     echo "Installed ${packages[@]}"
 }
 
 function awesomewm() {
-    declare -a packages=(
+    declare -a debian_packages=(
         "awesome" \
         "nitrogen" \
         "compton" \
@@ -204,97 +204,6 @@ function awesomewm() {
     Icon=/usr/share/pixmaps/awesome.xpm
     Keywords=Window manager
 EOF
-}
-
-function remove_packages() {
-    local installed_packages=(
-        "libpcsclite1" "PC/SC Lite shared library" OFF \
-        "pcscd" "Middleware to access a smart card" OFF \
-        "libccid" "PC/SC driver for USB CCID smart card readers" OFF \
-        "libpcsc-perl" "Perl bindings for PC/SC" OFF \
-        "pcsc-tools" "Tools for testing PC/SC drivers and applications" OFF \
-        "libnss3-tools" "Network Security Service tools" OFF \
-        "ffmpeg" "Multimedia player, server and encoder" OFF \
-        "obs-studio" "Open broadcaster software studio" OFF \
-        "openssl" "Secure Sockets Layer toolkit" OFF \
-        "qbittorrent" "Free and reliable P2P BitTorrent client" OFF \
-        "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" OFF \
-        "python3" "Python 3 interpreter" OFF \
-        "python3-pip" "Python package installer" OFF \
-        "vim" "Vi IMproved - enhanced vi editor" OFF \
-        "ethtool" "Utility for controlling network drivers and hardware" OFF \
-        "net-tools" "Networking tools" OFF \
-        "nmap" "Network exploration tool and security scanner" OFF
-        "samba" "SMB/CIFS file, print, and login server for Unix" OFF \
-        "gnome-keyring" "GNOME keyring services" OFF \
-        "gnome-themes-extra" "GNOME extra themes" OFF \
-        "apt-transport-https" "APT transport for downloading via the HTTPS protocol" OFF \
-        "docker.io" "Container platform tool" OFF \
-        "gnupg2" "GNU privacy guard - modern version" OFF \
-        "ebtables" "Ethernet bridge frame table administration" OFF \
-        "aria2" "High speed download utility" OFF \
-        "thunderbird" "Email, news and chat client from Mozilla" OFF \
-        "awesome" "highly configurable, next generation framework window manager for Debian 12" OFF \
-        "nitrogen" "wallpaper browser and changing utility for Debian 12" OFF \
-        "dmenu" "dynamic menu for Debian 12" OFF \
-        "compton" "X11 compositor for Debian 12" OFF \
-        "ufw" "Uncomplicated Firewall" OFF \
-        "timeshift" "System restore tool for Linux" OFF \
-        "nfs-common" "NFS support files common to client and server" OFF \
-        "neofetch" "System information tool" OFF \
-        "curl" "Command line tool for transferring data with URL syntax" OFF \
-        "lsb-release" "Linux Standard Base version reporting utility" OFF \
-        "unattended-upgrades" "Automatic installation of security upgrades" OFF \
-        "kwalletmanager" "KDE wallet manager" OFF \
-        "plasma-discover" "KDE Discover software store" OFF \
-        "plasma-discover-snap-backend" "Snap backend for KDE Discover" OFF
-        "brave-browser" "Brave browser" OFF \
-        "google-chrome-stable" "Google Chrome" OFF \
-        "firefox" "Firefox" OFF \
-        "thorium-browser" "Thorium browser" OFF \
-        "mullvad-vpn" "Mullvad browser" OFF \
-    )
-       
-# List of packages to remove
-    local to_remove=()
-
-    # Check which packages are installed and should be removed
-    for ((i=0; i<${#installed_packages[@]}; i+=3)); do
-        if [ "${installed_packages[i+2]}" == "OFF" ]; then
-            pkg="${installed_packages[i]}"
-            if is_package_installed "$pkg"; then
-                to_remove+=("$pkg")
-            fi
-        fi
-    done
-
-    # Check if there are packages to remove
-    if [ ${#to_remove[@]} -eq 0 ]; then
-        echo "No packages to remove."
-        return
-    fi
-
-    echo "Removing the following packages: ${to_remove[*]}"
-    for pkg in "${to_remove[@]}"; do
-        case $DISTRO in
-            ubuntu|debian)
-                sudo apt remove --purge "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
-                ;;
-            centos|fedora|rhel|rocky)
-                sudo yum remove "$pkg" -y || { echo "Failed to remove $pkg"; exit 1; }
-                ;;
-            arch|manjaro)
-                sudo pacman -R "$pkg" --noconfirm || { echo "Failed to remove $pkg"; exit 1; }
-                ;;
-            opensuse-tumbleweed)
-                sudo zypper -n rm "$pkg" || { echo "Failed to remove $pkg"; exit 1; }
-                ;;
-            *)
-                echo "Unsupported distribution: $DISTRO. Exiting."
-                exit 1
-                ;;
-        esac
-    done
 }
 
 function install_torguard() {
