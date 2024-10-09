@@ -41,7 +41,8 @@ function add_repositories() {
             sudo yum-config-manager --add-repo https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm
             sudo yum-config-manager --add-repo https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm
             sudo yum-config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
-            sudo yum install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-9.noarch.rpm
+            sudo dnf install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm -y
+            sudo dnf install https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-9.noarch.rpm -y
             sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
             sudo yum install epel-release -y
             sudo yum update
@@ -128,6 +129,10 @@ function apt_installs() {
         "java-17-openjdk" "JDK17 support" ON \
         "unzip" "unzip package" ON \
         "qbittorrent" "Free and reliable P2P BitTorrent client" OFF \
+        "qemu-kvm" "QEMU-KVM support" ON \
+        "libvirt" "Libvirt support" ON \
+        "virt-install" "Virtual machine installer" ON \
+        "virt-viewer" "Virtual machine viewer" ON \
     )
 
     case $DISTRO in
@@ -143,7 +148,10 @@ function apt_installs() {
                 if ! rpm -q "$pkg" &>/dev/null; then
                     sudo yum install "$pkg" -y || { echo "Failed to install $pkg"; exit 1; }
                 fi
-                sudo systemctl enable --now docker
+            done
+            sudo systemctl enable --now docker
+            for drv in qemu network nodedev nwfilter secret storage interface; do 
+                sudo systemctl start virt${drv}d{,-ro,-admin}.socket 
             done
             ;;
         *)fi
@@ -771,18 +779,6 @@ function install_flatpak_and_bottles () {
 }
 
 function install_protonGE () {
-    if ! command -v steam &> /dev/null; then
-        echo "Steam is not installed. Please install Steam first."
-        return 1
-    fi
-
-    for cmd in curl jq steam; do
-        if ! command -v $cmd &> /dev/null; then
-            echo "$cmd could not be found. Please install it and try again."
-            return 1
-        fi
-    done
-
     local response
     echo "Do you want to install Proton GE? [y/n]"
     read -r response
@@ -800,11 +796,11 @@ function install_protonGE () {
             tar -xzvf "$file_name"
 
             # Create directory if it doesn't exist
-            if [ ! -d "$HOME/.steam/steam/compatibilitytools.d" ]; then
-                mkdir "$HOME/.steam/steam/compatibilitytools.d"
+            if [ ! -d "$HOME/.local/share/Steam/compatibilitytools.d" ]; then
+                mkdir "$HOME/.local/share/Steam/compatibilitytools.d"
             fi
 
-            mv "$folder_name" "$HOME/.steam/steam/compatibilitytools.d/"
+            mv "$folder_name" "$HOME/.local/share/Steam/compatibilitytools.d"
             rm "$file_name"
             echo "Proton GE ($folder_name) has been installed successfully."
         fi
