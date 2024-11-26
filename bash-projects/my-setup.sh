@@ -1226,6 +1226,8 @@ function configure_bashrc () {
     alias labc='ls -lap' #alphabetical sort
     alias lf="ls -l | egrep -v '^d'" # files only
     alias ldir="ls -l | egrep '^d'" # directories only
+    alias v='vim' # Edit a file with vim
+    alias vs='code' # Edit a file with Visual Studio Code
 
     # Change directory aliases
     alias ..='cd ..'
