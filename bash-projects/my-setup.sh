@@ -29,7 +29,7 @@ function blacklist_nouveau() {
 function add_repositories() {
      # Display a notice about the action being taken
     echo "Adding repositories"
-        
+
     case $DISTRO in
         ubuntu|debian)
             sudo add-apt-repository non-free -y
@@ -79,6 +79,7 @@ function apt_installs() {
         "qbittorrent" "Free and reliable P2P BitTorrent client" OFF \
         "ttf-mscorefonts-installer" "Installer for Microsoft TrueType core fonts" ON \
         "python3" "Python 3 interpreter" ON \
+        "lsof" "List open files" ON \
         "googler" "Google from the terminal" ON \
         "python3-pip" "Python package installer" ON \
         "vim" "Vi IMproved - enhanced vi editor" ON \
@@ -153,12 +154,12 @@ function apt_installs() {
                 fi
             done
             sudo systemctl enable --now docker
-            for drv in qemu network nodedev nwfilter secret storage interface; do 
-                sudo systemctl start virt${drv}d{,-ro,-admin}.socket 
+            for drv in qemu network nodedev nwfilter secret storage interface; do
+                sudo systemctl start virt${drv}d{,-ro,-admin}.socket
             done
             ;;
-        *)fi
-    done
+        *)
+    esac
     echo "Installed ${packages[@]}"
 }
 
@@ -344,7 +345,7 @@ function download_and_install_deb() {
             sudo pacman -Syu --noconfirm
             ;;
         opensuse-tumbleweed)
-            sudo zypper -n refresh 
+            sudo zypper -n refresh
             ;;
     esac
 
@@ -433,37 +434,37 @@ function install_btop() {
     if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
         cd $HOME/Downloads
                latest_release_btop=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r '.assets[] | select(.name | contains("x86_64")) | .browser_download_url')
-        
+
         # Check if the curl command was successful
         if [ -z "$latest_release_btop" ]; then
             echo "Failed to fetch the latest release URL for btop."
             return 1
         fi
-        
+
         btop_file_name=$(basename "$latest_release_btop")
         wget "$latest_release_btop" -O "$btop_file_name"
-        
+
         # Check if the wget command was successful
         if [ $? -ne 0 ]; then
             echo "Failed to download the btop package."
             return 1
         fi
-        
+
         echo "Successfully downloaded $btop_file_name"
-        
+
         tar -xjf "$btop_file_name"
         cd btop
         sudo make install
         sudo make setuid
-        
+
         # Check if the installation was successful
         if [ $? -ne 0 ]; then
             echo "Failed to install btop."
             return 1
         fi
-        
+
         echo "Successfully installed btop"
-        
+
         cd $HOME/Downloads || exit
         rm -r "$btop_file_name"
     else
@@ -1014,8 +1015,8 @@ function install_git () {
     SKIPTESTS=
     BUILDDIR=
     SKIPINSTALL=
-    for i in "$@"; do 
-        case $i in 
+    for i in "$@"; do
+        case $i in
             -skiptests|--skip-tests) # Skip tests portion of the build
                 SKIPTESTS=YES
                 shift
@@ -1055,14 +1056,14 @@ function install_git () {
         echo "Unsupported package manager. Exiting."
         exit 1
     fi
-    
+
     git_tarball_url="$(curl --retry 5 "https://api.github.com/repos/git/git/tags" | jq -r '.[0].tarball_url')"
     curl -L --retry 5 "${git_tarball_url}" --output "git-source.tar.gz"
     tar -xf "git-source.tar.gz" --strip 1
 
     make configure
     ./configure --prefix=/usr --with-openssl
-    make 
+    make
     if [[ "${SKIPTESTS}" != "YES" ]]; then
         make test
     fi
@@ -1152,10 +1153,10 @@ function install_theme () {
     ./install.sh
     cd $HOME/Documents/
 
-    # Clone the Tela-icon-theme repository from GitHub to the current directory (Documents) 
+    # Clone the Tela-icon-theme repository from GitHub to the current directory (Documents)
     git clone https://github.com/vinceliuice/Tela-icon-theme.git
     cd Tela-icon-theme
-    # Install the Tela icon theme 
+    # Install the Tela icon theme
     ./install.sh
 
     git clone https://github.com/ryanoasis/nerd-fonts.git
@@ -1174,6 +1175,7 @@ function configure_bashrc () {
     ### My custom .bashrc file ###
     cat << 'EOF' | tee -a ~/.bashrc > /dev/null
     #Expand history size
+    export HISTTIMEFORMAT="%F %T "
     export HISTORYFILE=10000
     export HISTORYSIZE=10000
 
@@ -1306,14 +1308,14 @@ function configure_bashrc () {
     {
         # Dumps a list of all IP addresses for every device
         # /sbin/ifconfig |grep -B1 "inet addr" |awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' |awk -F: '{ print $1 ": " $3 }';
-        
+
         ### Old commands
         # Internal IP Lookup
         #echo -n "Internal IP: " ; /sbin/ifconfig eth0 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}'
     #
     #	# External IP Lookup
         #echo -n "External IP: " ; wget http://smart-ip.net/myip -O - -q
-        
+
         # Internal IP Lookup.
         if [ -e /sbin/ip ];
         then
@@ -1322,7 +1324,7 @@ function configure_bashrc () {
             echo -n "Internal IP: " ; /sbin/ifconfig enp6s0 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
         fi
 
-        # External IP Lookup 
+        # External IP Lookup
         echo -n "External IP: " ; curl -s ifconfig.me
     }
 
@@ -1476,7 +1478,7 @@ while true; do
     echo "24 - Customise fstab"
     echo "25 - Exit"
     read -p "Enter your choice: " choice
-    
+
     case $choice in
         1) function_status blacklist_nouveau;;
         2) function_status add_repositories;;

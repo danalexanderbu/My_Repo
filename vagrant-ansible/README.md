@@ -5,3 +5,5 @@ IP addresses can be found in the ip folder on the vm.
 
 Will take a while to complete. To run do:
 ansible-playbook site.yaml -i inventory/hosts.ini --key-file ~/.ssh/my_vagrant_key
+
+Still have issues linking all nodes
