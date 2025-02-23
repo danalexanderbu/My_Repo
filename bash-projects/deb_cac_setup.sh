@@ -312,7 +312,7 @@ browser_check () {
 
             # Prompt user to elect to replace snap firefox with apt firefox
             choice=''
-            while [ "$choice" != "y" ] && [ "$choice" != "n" ]; then
+            while [ "$choice" != "y" ] && [ "$choice" != "n" ]; do
                 echo -e "\nWould you like to switch to the apt version of Firefox? ${INFO_COLOR}(y/n)${NO_COLOR}"
                 read -rp '> ' choice
             done

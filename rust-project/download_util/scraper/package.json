@@ -1,0 +1,16 @@
+{
+    "name": "scraper",
+    "version": "1.0.0",
+    "description": "A scraper for Atlassian download archives using Puppeteer and Puppeteer-extra",
+    "main": "scraper.mjs",
+    "scripts": {
+      "start": "node scraper.mjs"
+    },
+    "dependencies": {
+      "puppeteer": "^19.0.0",
+      "puppeteer": "^24.2.1",
+      "puppeteer-extra": "^3.3.6"
+    },
+    "author": "Daniel Burke",
+    "license": "MIT"
+  }

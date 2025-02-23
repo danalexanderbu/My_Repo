@@ -354,7 +354,7 @@ globalkeys = gears.table.join(
         {description = "go back", group = "client"}),
 
     -- Standard program
-    awful.key({ modkey,           }, "Return", function () awful.spawn("kitty") end,
+    awful.key({ modkey,           }, "Return", function () awful.spawn("alacritty") end,
               {description = "open a terminal", group = "launcher"}),
     awful.key({ modkey, "Control" }, "r", awesome.restart,
               {description = "reload awesome", group = "awesome"}),
@@ -657,6 +657,6 @@ end)
 -- Gaps
 beautiful.useless_gap = 5
 -- Autostart Applications
---awful.spawn.with_shell("compton --config $HOME/.config/compton.conf --daemon")
---awful.spawn.with_shell("/usr/bin/nitrogen --restore")
+awful.spawn.with_shell("picom --config $HOME/.config/picom.conf --daemon")
+awful.spawn.with_shell("/usr/bin/nitrogen --restore")
 awful.spawn.with_shell("~/.config/display.sh")
