@@ -1,14 +1,26 @@
-import puppeteer from 'puppeteer';
+import { RETRY_DELAY } from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+puppeteer.use(StealthPlugin());
 
-const products = ["jira", "bamboo"];
+const productSources = {
+  jira: "https://www.atlassian.com/software/jira/download-archives",
+  bamboo: "https://www.atlassian.com/software/bamboo/download-archives",
+  bitbucket: "https://www.atlassian.com/software/bitbucket/download-archives",
+  confluence: "https://www.atlassian.com/software/confluence/download-archives",
+  artifactory: "https://jfrog.com/download-jfrog-platform",
+  gitlab: "https://packages.gitlab.com/app/gitlab/gitlab-ce/search?dist=el%2F9",
+  jenkins: "https://archives.jenkins-ci.org/redhat-stable",
+  sonarqube: "https://www.sonarsource.com/products/sonarqube/downloads/success-download-community-edition"
+};
 
 async function scrapeProduct(product) {
-  const url = `https://www.atlassian.com/software/${product}/download-archives`;
-  console.log(`\n===== Scraping ${product.toUpperCase()} from ${url} =====`);
+  const url = productSources[product];
+  let versionData = null; // ✅ Declare variable before assigning
 
   const browser = await puppeteer.launch({
     executablePath: '/usr/bin/google-chrome-stable',
-    headless: false,
+    headless: 'new',
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -22,274 +34,135 @@ async function scrapeProduct(product) {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'
   );
 
-  // For simplicity, we'll assume that each product page uses a similar structure
-  // and that we want to extract up to 5 download URLs.
-  const allVersions = [];
-  const processedIndexes = new Set();
+  await page.goto(url, { waitUntil: 'networkidle2' });
 
-  for (let i = 0; i < 10; i++) {
-    if (allVersions.length >= 5) {
-      console.log(`🎯 Reached limit of 5 URLs for ${product.toUpperCase()}.`);
-      break;
-    }
-
-    console.log(`\n🔄 [${product.toUpperCase()}] Iteration #${i + 1} => Navigating to page fresh...`);
-    await page.goto(url, { waitUntil: 'networkidle2' });
-
-    // Find the expander for "10.x" (you may need to adapt if layout differs)
-    const expanders = await page.$$('a.expander');
-    let targetExpander = null;
-    for (const expanderHandle of expanders) {
-      const dv = await page.evaluate(el => el.getAttribute('data-version'), expanderHandle);
-      // For demonstration, we assume we only want versions that start with "10."
-      if (dv && dv.startsWith('10.')) {
-        targetExpander = expanderHandle;
-        break;
-      }
-    }
-    if (!targetExpander) {
-      console.log(`⚠️ No expander found for data-version="10.x" on ${product.toUpperCase()}. Stopping...`);
-      break;
-    }
-
-    // Click the expander
-    await targetExpander.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-    await new Promise(r => setTimeout(r, 2000));
-    console.log(`🖱️ Clicking the ${product.toUpperCase()} expander...`);
-    await targetExpander.click();
-    await new Promise(r => setTimeout(r, 3000));
-
-    // Find all Download buttons on the page
-    const downloadButtons = await page.$$('a.product-versions.accordion');
-    console.log(`🔍 Found ${downloadButtons.length} Download buttons on iteration #${i + 1} for ${product.toUpperCase()}`);
-
-    if (downloadButtons.length === 0) {
-      console.log(`⚠️ No download buttons found for ${product.toUpperCase()}. Stopping...`);
-      break;
-    }
-
-    const buttonIndex = i; // each iteration tries a new button
-    if (buttonIndex >= downloadButtons.length) {
-      console.log(`⚠️ Button index ${buttonIndex} >= total buttons ${downloadButtons.length} for ${product.toUpperCase()}. Stopping...`);
-      break;
-    }
-    if (processedIndexes.has(buttonIndex)) {
-      console.log(`ℹ️ Already processed button #${buttonIndex} for ${product.toUpperCase()}. Stopping...`);
-      break;
-    }
-    processedIndexes.add(buttonIndex);
-
-    // Scroll & click that button
-    const btn = downloadButtons[buttonIndex];
-    await btn.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-    await new Promise(r => setTimeout(r, 2000));
-    console.log(`📥 Clicking Download button #${buttonIndex + 1} for ${product.toUpperCase()}...`);
-    try {
-      await btn.click();
-    } catch (err) {
-      console.log(`❌ Could not click button #${buttonIndex + 1} for ${product.toUpperCase()}: ${err.message}`);
-      continue;
-    }
-
-    // Wait for .tar.gz to load
-    await new Promise(r => setTimeout(r, 3000));
-    try {
-      await page.waitForSelector(
-        'select#select-product-version option[data-product-version][value*=".tar.gz"]',
-        { timeout: 20000 }
-      );
-
-      const versionData = await page.evaluate(() => {
-        const option = document.querySelector(
-          'select#select-product-version option[data-product-version][value*=".tar.gz"]'
-        );
-        if (option) {
-          return {
-            version: option.getAttribute('data-product-version'),
-            url: option.getAttribute('value')
-          };
-        }
-        return null;
-      });
-
-      if (versionData) {
-        if (!allVersions.some(item => item.url === versionData.url)) {
-          console.log(`✅ Found ${product.toUpperCase()} sub-version: ${versionData.version}`);
-          console.log(`🔗 URL: ${versionData.url}`);
-          allVersions.push(versionData);
-        } else {
-          console.log(`ℹ️ Duplicate version ${versionData.version} found for ${product.toUpperCase()}. Skipping...`);
-        }
-      } else {
-        console.log(`⚠️ No .tar.gz found for button #${buttonIndex + 1} for ${product.toUpperCase()}`);
-      }
-    } catch (err) {
-      console.log(`❌ Timed out waiting for .tar.gz on ${product.toUpperCase()}: ${err.message}`);
-    }
-
-    // Reload the page for the next iteration
-    console.log(`🔄 Reloading page for next iteration for ${product.toUpperCase()}...`);
-    await page.reload({ waitUntil: 'networkidle2' });
+  if (url.includes("atlassian.com")) {
+    versionData = await scrapeAtlassian(page, product);
+  } else if (url.includes("jfrog.com")) {
+    versionData = await scrapeJfrog(page);
+  } else if (url.includes("gitlab.com")) {
+    versionData = await scrapeGitlab(page);
+  } else if (url.includes("jenkins-ci.org")) {
+    versionData = await scrapeJenkins(page);
+  } else if (url.includes("sonarsource.com")) {
+    versionData = await scrapeSonarqube(page);
   }
-
-  console.log(`\n🎯 Final .tar.gz versions found for ${product.toUpperCase()}:`);
-  console.table(allVersions);
 
   await browser.close();
 
-  return allVersions;
+  return versionData ? { version: versionData.version, url: versionData.url } : null;
 }
 
-const atlassians = ["bitbucket", "confluence"];
+// ✅ Helper functions for each product
 
-async function scrapeAtlassian(atlassian) {
-  const url = `https://www.atlassian.com/software/${atlassian}/download-archives`;
-  console.log(`\n===== Scraping ${atlassian.toUpperCase()} from ${url} =====`);
+async function scrapeAtlassian(page, product) {
+  const expanders = await page.$$('a.expander');
+  let targetExpander = null;
+  let highestVersion = null;
 
-  const browser = await puppeteer.launch({
-    executablePath: '/usr/bin/google-chrome-stable',
-    headless: false,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-blink-features=AutomationControlled',
-      '--window-size=1280,800'
-    ]
-  });
+  for (const expander of expanders) {
+    const versionText = await page.evaluate(el => el.getAttribute('data-version'), expander);
 
-  const page = await browser.newPage();
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'
-  );
-
-  // For simplicity, we'll assume that each atlassian page uses a similar structure
-  // and that we want to extract up to 5 download URLs.
-  const allVersions = [];
-  const processedIndexes = new Set();
-
-  for (let i = 0; i < 10; i++) {
-    if (allVersions.length >= 5) {
-      console.log(`🎯 Reached limit of 5 URLs for ${atlassian.toUpperCase()}.`);
-      break;
-    }
-
-    console.log(`\n🔄 [${atlassian.toUpperCase()}] Iteration #${i + 1} => Navigating to page fresh...`);
-    await page.goto(url, { waitUntil: 'networkidle2' });
-
-    // Find the expander for "10.x" (you may need to adapt if layout differs)
-    const expanders = await page.$$('a.expander');
-    let targetExpander = null;
-    for (const expanderHandle of expanders) {
-      const dv = await page.evaluate(el => el.getAttribute('data-version'), expanderHandle);
-      // For demonstration, we assume we only want versions that start with "10."
-      if (dv && dv.startsWith('9.0')) {
-        targetExpander = expanderHandle;
-        break;
+    if (versionText) {
+      const versionNum = parseFloat(versionText);
+      if (!highestVersion || versionNum > highestVersion) {
+        highestVersion = versionNum;
+        targetExpander = expander;
       }
     }
-    if (!targetExpander) {
-      console.log(`⚠️ No expander found for data-version="10.x" on ${atlassian.toUpperCase()}. Stopping...`);
-      break;
-    }
-
-    // Click the expander
-    await targetExpander.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-    await new Promise(r => setTimeout(r, 2000));
-    console.log(`🖱️ Clicking the ${atlassian.toUpperCase()} expander...`);
-    await targetExpander.click();
-    await new Promise(r => setTimeout(r, 3000));
-
-    // Find all Download buttons on the page
-    const downloadButtons = await page.$$('a.product-versions.accordion');
-    console.log(`🔍 Found ${downloadButtons.length} Download buttons on iteration #${i + 1} for ${atlassian.toUpperCase()}`);
-
-    if (downloadButtons.length === 0) {
-      console.log(`⚠️ No download buttons found for ${atlassian.toUpperCase()}. Stopping...`);
-      break;
-    }
-
-    const buttonIndex = i; // each iteration tries a new button
-    if (buttonIndex >= downloadButtons.length) {
-      console.log(`⚠️ Button index ${buttonIndex} >= total buttons ${downloadButtons.length} for ${atlassian.toUpperCase()}. Stopping...`);
-      break;
-    }
-    if (processedIndexes.has(buttonIndex)) {
-      console.log(`ℹ️ Already processed button #${buttonIndex} for ${atlassian.toUpperCase()}. Stopping...`);
-      break;
-    }
-    processedIndexes.add(buttonIndex);
-
-    // Scroll & click that button
-    const btn = downloadButtons[buttonIndex];
-    await btn.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-    await new Promise(r => setTimeout(r, 2000));
-    console.log(`📥 Clicking Download button #${buttonIndex + 1} for ${atlassian.toUpperCase()}...`);
-    try {
-      await btn.click();
-    } catch (err) {
-      console.log(`❌ Could not click button #${buttonIndex + 1} for ${atlassian.toUpperCase()}: ${err.message}`);
-      continue;
-    }
-
-    // Wait for x64.bin to load
-    await new Promise(r => setTimeout(r, 3000));
-    try {
-      await page.waitForSelector(
-        'select#select-product-version option[data-product-version][value*="x64.bin"]',
-        { timeout: 20000 }
-      );
-
-      const versionData = await page.evaluate(() => {
-        const option = document.querySelector(
-          'select#select-product-version option[data-product-version][value*="x64.bin"]'
-        );
-        if (option) {
-          return {
-            version: option.getAttribute('data-product-version'),
-            url: option.getAttribute('value')
-          };
-        }
-        return null;
-      });
-
-      if (versionData) {
-        if (!allVersions.some(item => item.url === versionData.url)) {
-          console.log(`✅ Found ${atlassian.toUpperCase()} sub-version: ${versionData.version}`);
-          console.log(`🔗 URL: ${versionData.url}`);
-          allVersions.push(versionData);
-        } else {
-          console.log(`ℹ️ Duplicate version ${versionData.version} found for ${atlassian.toUpperCase()}. Skipping...`);
-        }
-      } else {
-        console.log(`⚠️ No x64.bin found for button #${buttonIndex + 1} for ${atlassian.toUpperCase()}`);
-      }
-    } catch (err) {
-      console.log(`❌ Timed out waiting for x64.bin on ${atlassian.toUpperCase()}: ${err.message}`);
-    }
-
-    // Reload the page for the next iteration
-    console.log(`🔄 Reloading page for next iteration for ${atlassian.toUpperCase()}...`);
-    await page.reload({ waitUntil: 'networkidle2' });
   }
 
-  console.log(`\n🎯 Final x64.bin versions found for ${atlassian.toUpperCase()}:`);
-  console.table(allVersions);
+  if (!targetExpander) {
+    return null;
+  }
 
-  await browser.close();
+  await targetExpander.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  await targetExpander.click();
+  await new Promise(r => setTimeout(r, 2000));
 
-  return allVersions;
+  const downloadButtons = await page.$$('a.product-versions.accordion');
+  if (downloadButtons.length === 0) {
+    return null;
+  }
+
+  await downloadButtons[0].evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  await downloadButtons[0].click();
+  await new Promise(r => setTimeout(r, 2000));
+
+  const fileExtension = (product === "bitbucket" || product === "confluence") ? ".bin" : ".tar.gz";
+
+  return await page.evaluate((fileExtension) => {
+    const option = document.querySelector(`select#select-product-version option[data-product-version][value*="${fileExtension}"]`);
+    return option
+      ? { version: option.getAttribute('data-product-version'), url: option.getAttribute('value') }
+      : null;
+  }, fileExtension);
+}
+
+async function scrapeJfrog(page) {
+  return await page.evaluate(() => {
+      // Select the `<a>` tag containing the RPM download link
+      const rpmLink = document.querySelector("a.ijf-download.download-link[href$='.rpm']");
+
+      if (!rpmLink) return null;
+
+      return {
+          version: rpmLink.href.split('/').pop().replace('.rpm', ''),
+          url: rpmLink.href // Extracts the RPM URL
+      };
+  });
+}
+
+async function scrapeGitlab(page) {
+  return await page.evaluate(() => {
+      // Select the first `<a>` tag that contains "x86_64.rpm"
+      const rpmLink = document.querySelector("a[href$='x86_64.rpm']");
+
+      if (!rpmLink) return null;
+
+      return {
+          version: rpmLink.textContent.trim(), // Extracts "gitlab-ce-17.9.0-ce.0.el9.x86_64.rpm"
+          url: `https://packages.gitlab.com${rpmLink.getAttribute('href')}` // Convert relative URL to absolute
+      };
+  });
+}
+
+async function scrapeJenkins(page) {
+  return await page.evaluate(() => {
+      // Select all `<a>` tags with ".noarch.rpm" in the href
+      const rpmLinks = document.querySelectorAll("a[href$='.noarch.rpm']");
+
+      if (rpmLinks.length === 0) return null;
+
+      // Get the last `.noarch.rpm` link
+      const lastRpmLink = rpmLinks[rpmLinks.length - 1];
+
+      return {
+          version: lastRpmLink.textContent.trim(), // Extracts "jenkins-2.492.1-1.1.noarch.rpm"
+          url: lastRpmLink.href // Extracts the full URL
+      };
+  });
+}
+
+async function scrapeSonarqube(page) {
+  return await page.evaluate(() => {
+    const downloadSelector = "a[href*='binaries.sonarsource.com/Distribution/sonarqube'][href$='.zip']";
+    const downloadLink = document.querySelector(downloadSelector);
+    return downloadLink
+      ? { version: downloadLink.href.split('/').pop().replace('.zip', ''), url: downloadLink.href }
+      : null;
+  });
 }
 
 (async () => {
-    try {
-      const productResults = products.map(prod => scrapeProduct(prod));
-      const atlassianResults = atlassians.map(atlassian => scrapeAtlassian(atlassian));
+  const results = await Promise.all(Object.keys(productSources).map(scrapeProduct));
 
-      // Wait for all scrapers to finish concurrently
-      const results = await Promise.all([...productResults, ...atlassianResults]);
-      console.log("\n===== Final Results =====");
-      console.table(results);
-    } catch (err) {
-      console.error("Error running scrapers:", err);
-    }
-  })();
+  const formattedResults = results
+    .filter(Boolean)
+    .reduce((acc, product, index) => {
+      acc[Object.keys(productSources)[index]] = product;
+      return acc;
+    }, {});
+
+  console.log(JSON.stringify(formattedResults, null, 2));
+})();

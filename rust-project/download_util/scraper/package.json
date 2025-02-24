@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "A scraper for Atlassian download archives using Puppeteer and Puppeteer-extra",
     "main": "scraper.mjs",
+    "type": "module",
     "scripts": {
       "start": "node scraper.mjs"
     },
